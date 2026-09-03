@@ -18,7 +18,7 @@ CREATE TABLE refresh_token (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE course_material (
+CREATE TABLE user_api_key (
     id UUID PRIMARY KEY,
     user_id UUID REFERENCES "user"(id),
     provider VARCHAR(100) NOT NULL,
@@ -35,6 +35,16 @@ CREATE TABLE course (
     description TEXT NOT NULL,
     is_active BOOLEAN NOT NULL,
     analysis_status analysis_status_list DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TYPE material_type AS ENUM ('SUMMARY', 'NOTES', 'PDF');
+
+CREATE TABLE user_material (
+    id UUID PRIMARY KEY,
+    course_id UUID REFERENCES course(id),
+    content TEXT,
+    type material_type,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
