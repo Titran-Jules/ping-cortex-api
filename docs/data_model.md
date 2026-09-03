@@ -6,7 +6,7 @@ User
 
 Course
 
-    course — id, user_id, title, description, active, analysis_status (pending/analyzing/ready), created_at (the course provided by the student to the AI)
+    course — id, user_id, title, description, is_active, analysis_status (pending/analyzing/ready), created_at (the course provided by the student to the AI)
     course_material — id, course_id, content (plain text or extracted text), type (summary/notes/pdf-text), created_at → provides context to the AI
 
 Concept Breakdown
