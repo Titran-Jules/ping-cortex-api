@@ -1,0 +1,118 @@
+openapi: 3.0.3
+info:
+  title: PingCortex API
+  description: API service for ping cortex app - it covers all endpoints and data structures
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8080/api'
+    description: Local development
+paths: {}
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: alice@gmail.com
+        password:
+          type: string
+          example: password123
+      required: [email, password]
+    JWTPayload:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        email:
+          type: string
+          example: alice@gmail.com
+        level:
+          type: string
+          example: First year in informatics
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: edab48bf5...
+        refreshToken:
+          type: string
+          example: edab48bf6...
+        user:
+          $ref: "#/components/schemas/JWTPayload"
+    UserRegister:
+      type: object
+      properties:
+        email:
+          type: string
+          example: alice@gmail.com
+        name:
+          type: string
+          example: Alice Wayne
+        password:
+          type: string
+          example: password123
+        level:
+          type: string
+          example: First year in informatics
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 123e4567-e89b-12d3-a456-426655440000
+        email:
+          type: string
+          example: alice@gmail.com
+        name:
+          type: string
+          example: Alice Wayne
+        level:
+          type: string
+          example: First year in informatics
+        alertThreshold:
+          type: integer
+          example: 9000
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-04T15:27:00
+    CourseResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 123e4567-f88b-12d3-a456-426655440000
+        title:
+          type: string
+          example: Object-Oriented Programming
+        description:
+          type: string
+          example: This course covers OOP by using Java with spring boot but without JPA.
+        isActive:
+          type: boolean
+          example: true
+        analysisStatus:
+          type: string
+          enum:
+            - PENDING
+            - ANALYZING
+            - READY
+          example: PENDING
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-04T16:00:00
+    CourseCreation:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Object-Oriented Programming
+        description:
+          type: string
+          example: This course covers OOP by using Java with spring boot but without JPA.
+      required: [title, description]
