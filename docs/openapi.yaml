@@ -6,9 +6,328 @@ info:
 servers:
   - url: 'http://localhost:8080/api'
     description: Local development
-paths: {}
+security:
+  - bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Create a new account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegister"
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        '409':
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate and receive access + refresh tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Exchange a refresh token for a new access token (rotates the refresh token)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        '200':
+          description: New token pair
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshResponse"
+        '401':
+          description: Refresh token invalid, expired, or revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke the given refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        '204':
+          description: Logged out
+  /users/me:
+    get:
+      tags: [User]
+      summary: Get the current user's profile
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+    patch:
+      tags: [User]
+      summary: Update the current user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+  /users/me/api-keys:
+    get:
+      tags: [User]
+      summary: List the current user's stored API keys
+      responses:
+        '200':
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKeyResponse"
+    post:
+      tags: [User]
+      summary: Store a new API key (encrypted server-side)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyCreate"
+      responses:
+        '201':
+          description: API key stored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyResponse"
+  /users/me/api-keys/{apiKeyId}:
+    parameters:
+      - $ref: "#/components/parameters/ApiKeyId"
+    delete:
+      tags: [User]
+      summary: Delete a stored API key
+      responses:
+        '204':
+          description: Deleted
+  /users/me/usage:
+    get:
+      tags: [User]
+      summary: Aggregated AI usage for the current user
+      responses:
+        '200':
+          description: Usage summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageSummaryResponse"
+  /courses:
+    get:
+      tags: [Courses]
+      summary: List the current user's courses
+      parameters:
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CourseResponse"
+    post:
+      tags: [Courses]
+      summary: Create a course (triggers automatic AI analysis on the description)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseCreation"
+      responses:
+        '201':
+          description: Course created, analysis started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseResponse"
+        '422':
+          description: No API key configured for this user, analysis cannot start
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /courses/{courseId}:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+    get:
+      tags: [Courses]
+      summary: Get a single course
+      responses:
+        '200':
+          description: Course detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseResponse"
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags: [Courses]
+      summary: Update a course's title/description
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseUpdate"
+      responses:
+        '200':
+          description: Updated course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseResponse"
+  /courses/{courseId}/active:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+    patch:
+      tags: [Courses]
+      summary: Toggle a course active/inactive
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseActiveUpdate"
+      responses:
+        '200':
+          description: Updated course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseResponse"
+  /courses/{courseId}/materials:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+    get:
+      tags: [Courses]
+      summary: List materials attached to a course
+      responses:
+        '200':
+          description: List of materials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaterialResponse"
+    post:
+      tags: [Courses]
+      summary: Add a material to a course (triggers incremental re-analysis, proposes coverage updates for validation)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialCreate"
+      responses:
+        '201':
+          description: Material added, re-analysis started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialResponse"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    CourseId:
+      name: courseId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ApiKeyId:
+      name: apiKeyId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: INVALID_CREDENTIALS
+        message:
+          type: string
+          example: Email or password is incorrect.
+      required: [code, message]
     LoginRequest:
       type: object
       properties:
@@ -43,6 +362,23 @@ components:
           example: edab48bf6...
         user:
           $ref: "#/components/schemas/JWTPayload"
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          example: edab48bf6...
+      required: [refreshToken]
+    RefreshResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: edab48bf7...
+        refreshToken:
+          type: string
+          description: New refresh token; the previous one is revoked (rotation).
+          example: edab48bf8...
     UserRegister:
       type: object
       properties:
@@ -58,11 +394,23 @@ components:
         level:
           type: string
           example: First year in informatics
+      required: [email, name, password, level]
+    UserUpdate:
+      type: object
+      properties:
+        level:
+          type: string
+          example: Second year in informatics
+        alertThreshold:
+          type: integer
+          nullable: true
+          example: 9000
     UserResponse:
       type: object
       properties:
         id:
           type: string
+          format: uuid
           example: 123e4567-e89b-12d3-a456-426655440000
         email:
           type: string
@@ -75,16 +423,58 @@ components:
           example: First year in informatics
         alertThreshold:
           type: integer
+          nullable: true
           example: 9000
         createdAt:
           type: string
           format: date-time
           example: 2026-09-04T15:27:00
+    ApiKeyCreate:
+      type: object
+      properties:
+        provider:
+          type: string
+          example: anthropic
+        apiKey:
+          type: string
+          description: Sent once in plaintext, encrypted server-side.
+          example: sk-ant-xxxxxxxx
+      required: [provider, apiKey]
+    ApiKeyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          example: anthropic
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-04T15:27:00
+    UsageSummaryResponse:
+      type: object
+      properties:
+        totalTokensIn:
+          type: integer
+          example: 152340
+        totalTokensOut:
+          type: integer
+          example: 48210
+        requestCount:
+          type: integer
+          example: 87
+        alertThreshold:
+          type: integer
+          nullable: true
+          example: 9000
     CourseResponse:
       type: object
       properties:
         id:
           type: string
+          format: uuid
           example: 123e4567-f88b-12d3-a456-426655440000
         title:
           type: string
@@ -97,10 +487,7 @@ components:
           example: true
         analysisStatus:
           type: string
-          enum:
-            - PENDING
-            - ANALYZING
-            - READY
+          enum: [PENDING, ANALYZING, READY]
           example: PENDING
         createdAt:
           type: string
@@ -116,3 +503,47 @@ components:
           type: string
           example: This course covers OOP by using Java with spring boot but without JPA.
       required: [title, description]
+    CourseUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Object-Oriented Programming
+        description:
+          type: string
+          example: This course covers OOP by using Java with spring boot but without JPA.
+    CourseActiveUpdate:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+          example: false
+      required: [isActive]
+    MaterialCreate:
+      type: object
+      properties:
+        content:
+          type: string
+          example: "Chapter 3 notes: inheritance and polymorphism..."
+        type:
+          type: string
+          enum: [SUMMARY, NOTES, PDF]
+          example: NOTES
+      required: [content, type]
+    MaterialResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+          example: "Chapter 3 notes: inheritance and polymorphism..."
+        type:
+          type: string
+          enum: [SUMMARY, NOTES, PDF]
+          example: NOTES
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-04T16:05:00
