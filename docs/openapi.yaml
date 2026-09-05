@@ -296,6 +296,151 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MaterialResponse"
+  /courses/{courseId}/concepts:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+    get:
+      tags: [ Concepts ]
+      summary: List the concepts of a course
+      responses:
+        '200':
+          description: List of concepts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConceptResponse"
+  /courses/{courseId}/concepts/{conceptId}/confirm-coverage:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+      - $ref: "#/components/parameters/ConceptId"
+    post:
+      tags: [ Concepts ]
+      summary: Manually confirm a concept as covered in class (NOT_COVERED/ANTICIPATED_COVERED -> COVERED)
+      responses:
+        '200':
+          description: Updated concept
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConceptResponse"
+  /courses/{courseId}/concepts/{conceptId}/revert-coverage:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+      - $ref: "#/components/parameters/ConceptId"
+    post:
+      tags: [ Concepts ]
+      summary: Manually revert a concept back to NOT_COVERED (app went ahead of the actual class pace)
+      responses:
+        '200':
+          description: Updated concept
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConceptResponse"
+  /courses/{courseId}/concepts/{conceptId}/advance:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+      - $ref: "#/components/parameters/ConceptId"
+    post:
+      tags: [ Concepts ]
+      summary: Manually unlock the next concept ahead of class coverage (only allowed once mastery threshold is reached)
+      responses:
+        '200':
+          description: Next concept marked ANTICIPATED_COVERED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConceptResponse"
+        '409':
+          description: Mastery threshold not yet reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /concepts/{conceptId}/mastery:
+    parameters:
+      - $ref: "#/components/parameters/ConceptId"
+    get:
+      tags: [ Concepts ]
+      summary: Current user's mastery level for a concept
+      responses:
+        '200':
+          description: Mastery info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MasteryResponse"
+  /concepts/{conceptId}/quiz/next:
+    parameters:
+      - $ref: "#/components/parameters/ConceptId"
+    get:
+      tags: [ Quiz ]
+      summary: Get the next adapted quiz question for this concept (difficulty based on current mastery)
+      responses:
+        '200':
+          description: Next question (correct answer is never included here)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizQuestionResponse"
+        '404':
+          description: No question available (concept not COVERED/ANTICIPATED_COVERED, or none generated yet)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /quiz-questions/{questionId}/attempts:
+    parameters:
+      - $ref: "#/components/parameters/QuestionId"
+    post:
+      tags: [ Quiz ]
+      summary: Submit an answer to a quiz question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuizAttemptCreate"
+      responses:
+        '201':
+          description: Attempt recorded, reveals correctness and the correct option
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizAttemptResponse"
+  /concepts/{conceptId}/feynman:
+    parameters:
+      - $ref: "#/components/parameters/ConceptId"
+    get:
+      tags: [ Feynman ]
+      summary: List this user's past Feynman submissions for a concept
+      responses:
+        '200':
+          description: List of submissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeynmanSubmissionResponse"
+    post:
+      tags: [ Feynman ]
+      summary: Submit a free-text explanation of the concept for AI evaluation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeynmanSubmissionCreate"
+      responses:
+        '201':
+          description: Submission evaluated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeynmanSubmissionResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -312,6 +457,20 @@ components:
         format: uuid
     ApiKeyId:
       name: apiKeyId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ConceptId:
+      name: conceptId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    QuestionId:
+      name: questionId
       in: path
       required: true
       schema:
@@ -547,3 +706,150 @@ components:
           type: string
           format: date-time
           example: 2026-09-04T16:05:00
+    ConceptResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Propositional logic
+        description:
+          type: string
+          example: Logical connectives, truth tables, tautologies
+        position:
+          type: integer
+          example: 1
+        coverageStatus:
+          type: string
+          enum: [ NOT_COVERED, ANTICIPATED_COVERED, COVERED ]
+          example: NOT_COVERED
+    MasteryResponse:
+      type: object
+      properties:
+        conceptId:
+          type: string
+          format: uuid
+        masteryLevel:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 65
+        lastReviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: 2026-09-03T18:20:00
+    QuizOptionPublic:
+      type: object
+      description: Option shown to the student before answering. Not includes which one is correct.
+      properties:
+        id:
+          type: string
+          format: uuid
+        text:
+          type: string
+          example: "True only if P and Q are both true"
+    QuizQuestionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        questionText:
+          type: string
+          example: "What is the correct truth table for AND (∧) between P and Q?"
+        difficulty:
+          type: string
+          enum: [ EASY, MEDIUM, HARD ]
+          example: EASY
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizOptionPublic"
+    QuizAttemptCreate:
+      type: object
+      properties:
+        selectedOptionId:
+          type: string
+          format: uuid
+      required: [ selectedOptionId ]
+    QuizAttemptResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        questionId:
+          type: string
+          format: uuid
+        selectedOptionId:
+          type: string
+          format: uuid
+        correctOptionId:
+          type: string
+          format: uuid
+          description: Revealed only after the attempt is submitted.
+        isCorrect:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-04T17:10:00
+    FeynmanSubmissionCreate:
+      type: object
+      properties:
+        explanationText:
+          type: string
+          example: "AND is true only when both sides are true, otherwise it's false..."
+      required: [ explanationText ]
+    FeynmanCriterionEvaluation:
+      type: object
+      properties:
+        name:
+          type: string
+          example: clarity
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 75
+        comment:
+          type: string
+          example: "Clear overall, but missing the falsity condition detail."
+    FeynmanEvaluation:
+      type: object
+      properties:
+        criteria:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeynmanCriterionEvaluation"
+        overallFeedback:
+          type: string
+          example: "Good grasp of the core idea, tighten up the edge cases."
+        misconceptions:
+          type: array
+          items:
+            type: string
+          example: [ "Confused AND with OR in one example" ]
+    FeynmanSubmissionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        explanationText:
+          type: string
+          example: "AND is true only when both sides are true, otherwise it's false..."
+        aiEvaluation:
+          $ref: "#/components/schemas/FeynmanEvaluation"
+        score:
+          type: number
+          format: float
+          example: 78.5
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-04T17:30:00
