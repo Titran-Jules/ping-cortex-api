@@ -1,0 +1,1048 @@
+openapi: 3.0.3
+info:
+  title: PingCortex API
+  description: API service for ping cortex app - it covers all endpoints and data structures
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8080/api'
+    description: Local development
+security:
+  - bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Create a new account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegister"
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        '409':
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate and receive access + refresh tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Exchange a refresh token for a new access token (rotates the refresh token)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        '200':
+          description: New token pair
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshResponse"
+        '401':
+          description: Refresh token invalid, expired, or revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke the given refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        '204':
+          description: Logged out
+  /users/me:
+    get:
+      tags: [User]
+      summary: Get the current user's profile
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+    patch:
+      tags: [User]
+      summary: Update the current user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+  /users/me/api-keys:
+    get:
+      tags: [User]
+      summary: List the current user's stored API keys
+      responses:
+        '200':
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKeyResponse"
+    post:
+      tags: [User]
+      summary: Store a new API key (encrypted server-side)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyCreate"
+      responses:
+        '201':
+          description: API key stored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyResponse"
+  /users/me/api-keys/{apiKeyId}:
+    parameters:
+      - $ref: "#/components/parameters/ApiKeyId"
+    delete:
+      tags: [User]
+      summary: Delete a stored API key
+      responses:
+        '204':
+          description: Deleted
+  /users/me/usage:
+    get:
+      tags: [User]
+      summary: Aggregated AI usage for the current user
+      responses:
+        '200':
+          description: Usage summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageSummaryResponse"
+  /courses:
+    get:
+      tags: [Courses]
+      summary: List the current user's courses
+      parameters:
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CourseResponse"
+    post:
+      tags: [Courses]
+      summary: Create a course (triggers automatic AI analysis on the description)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseCreation"
+      responses:
+        '201':
+          description: Course created, analysis started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseResponse"
+        '422':
+          description: No API key configured for this user, analysis cannot start
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /courses/{courseId}:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+    get:
+      tags: [Courses]
+      summary: Get a single course
+      responses:
+        '200':
+          description: Course detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseResponse"
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags: [Courses]
+      summary: Update a course's title/description
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseUpdate"
+      responses:
+        '200':
+          description: Updated course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseResponse"
+  /courses/{courseId}/active:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+    patch:
+      tags: [Courses]
+      summary: Toggle a course active/inactive
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseActiveUpdate"
+      responses:
+        '200':
+          description: Updated course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseResponse"
+  /courses/{courseId}/materials:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+    get:
+      tags: [Courses]
+      summary: List materials attached to a course
+      responses:
+        '200':
+          description: List of materials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaterialResponse"
+    post:
+      tags: [Courses]
+      summary: Add a material to a course (triggers incremental re-analysis, proposes coverage updates for validation)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialCreate"
+      responses:
+        '201':
+          description: Material added, re-analysis started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialResponse"
+  /courses/{courseId}/concepts:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+    get:
+      tags: [Concepts]
+      summary: List the concepts of a course
+      responses:
+        '200':
+          description: List of concepts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConceptResponse"
+  /courses/{courseId}/concepts/{conceptId}/confirm-coverage:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+      - $ref: "#/components/parameters/ConceptId"
+    post:
+      tags: [Concepts]
+      summary: Manually confirm a concept as covered in class (NOT_COVERED/ANTICIPATED_COVERED -> COVERED)
+      responses:
+        '200':
+          description: Updated concept
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConceptResponse"
+  /courses/{courseId}/concepts/{conceptId}/revert-coverage:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+      - $ref: "#/components/parameters/ConceptId"
+    post:
+      tags: [Concepts]
+      summary: Manually revert a concept back to NOT_COVERED (app went ahead of the actual class pace)
+      responses:
+        '200':
+          description: Updated concept
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConceptResponse"
+  /courses/{courseId}/concepts/{conceptId}/advance:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+      - $ref: "#/components/parameters/ConceptId"
+    post:
+      tags: [Concepts]
+      summary: Manually unlock the next concept ahead of class coverage (only allowed once mastery threshold is reached)
+      responses:
+        '200':
+          description: Next concept marked ANTICIPATED_COVERED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConceptResponse"
+        '409':
+          description: Mastery threshold not yet reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /concepts/{conceptId}/mastery:
+    parameters:
+      - $ref: "#/components/parameters/ConceptId"
+    get:
+      tags: [Concepts]
+      summary: Current user's mastery level for a concept
+      responses:
+        '200':
+          description: Mastery info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MasteryResponse"
+  /concepts/{conceptId}/quiz/next:
+    parameters:
+      - $ref: "#/components/parameters/ConceptId"
+    get:
+      tags: [Quiz]
+      summary: Get the next adapted quiz question for this concept (difficulty based on current mastery)
+      responses:
+        '200':
+          description: Next question (correct answer is never included here)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizQuestionResponse"
+        '404':
+          description: No question available (concept not COVERED/ANTICIPATED_COVERED, or none generated yet)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /quiz-questions/{questionId}/attempts:
+    parameters:
+      - $ref: "#/components/parameters/QuestionId"
+    post:
+      tags: [Quiz]
+      summary: Submit an answer to a quiz question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuizAttemptCreate"
+      responses:
+        '201':
+          description: Attempt recorded, reveals correctness and the correct option
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizAttemptResponse"
+  /concepts/{conceptId}/feynman:
+    parameters:
+      - $ref: "#/components/parameters/ConceptId"
+    get:
+      tags: [Feynman]
+      summary: List this user's past Feynman submissions for a concept
+      responses:
+        '200':
+          description: List of submissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeynmanSubmissionResponse"
+    post:
+      tags: [Feynman]
+      summary: Submit a free-text explanation of the concept for AI evaluation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeynmanSubmissionCreate"
+      responses:
+        '201':
+          description: Submission evaluated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeynmanSubmissionResponse"
+  /courses/{courseId}/chat-sessions:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+    post:
+      tags: [Chat AI]
+      summary: Create a new chat session with AI about a specific course.
+      responses:
+        '201':
+          description: Chat session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatSessionResponse"
+  /chat-sessions/{chatSessionId}/messages:
+    parameters:
+      - $ref: "#/components/parameters/ChatSessionId"
+    get:
+      tags: [Chat AI]
+      summary: Get all messages in a session
+      responses:
+        '200':
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatMessageResponse"
+    post:
+      tags: [Chat AI]
+      summary: Send a message and receive the AI tutor's reply
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatMessageCreation"
+      responses:
+        '201':
+          description: Message stored and AI reply generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatExchangeResponse"
+  /reviews/today:
+    get:
+      tags: [Reviews]
+      summary: List concepts due for review today (spaced repetition)
+      responses:
+        '200':
+          description: Concepts due for review, ordered by how overdue they are
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReviewDueResponse"
+  /reviews/{conceptId}/complete:
+    parameters:
+      - $ref: "#/components/parameters/ConceptId"
+    post:
+      tags: [Reviews]
+      summary: Mark a concept's review as done and reschedule the next one
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewCompletion"
+      responses:
+        '200':
+          description: Review recorded, next occurrence scheduled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewScheduleResponse"
+        '404':
+          description: No review scheduled for this concept
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    CourseId:
+      name: courseId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ApiKeyId:
+      name: apiKeyId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ConceptId:
+      name: conceptId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    QuestionId:
+      name: questionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ChatSessionId:
+      name: chatSessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: INVALID_CREDENTIALS
+        message:
+          type: string
+          example: Email or password is incorrect.
+      required: [code, message]
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: alice@gmail.com
+        password:
+          type: string
+          example: password123
+      required: [email, password]
+    JWTPayload:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        email:
+          type: string
+          example: alice@gmail.com
+        level:
+          type: string
+          example: First year in informatics
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: edab48bf5...
+        refreshToken:
+          type: string
+          example: edab48bf6...
+        user:
+          $ref: "#/components/schemas/JWTPayload"
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          example: edab48bf6...
+      required: [refreshToken]
+    RefreshResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: edab48bf7...
+        refreshToken:
+          type: string
+          description: New refresh token; the previous one is revoked (rotation).
+          example: edab48bf8...
+    UserRegister:
+      type: object
+      properties:
+        email:
+          type: string
+          example: alice@gmail.com
+        name:
+          type: string
+          example: Alice Wayne
+        password:
+          type: string
+          example: password123
+        level:
+          type: string
+          example: First year in informatics
+      required: [email, name, password, level]
+    UserUpdate:
+      type: object
+      properties:
+        level:
+          type: string
+          example: Second year in informatics
+        alertThreshold:
+          type: integer
+          nullable: true
+          example: 9000
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        email:
+          type: string
+          example: alice@gmail.com
+        name:
+          type: string
+          example: Alice Wayne
+        level:
+          type: string
+          example: First year in informatics
+        alertThreshold:
+          type: integer
+          nullable: true
+          example: 9000
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-04T15:27:00
+    ApiKeyCreate:
+      type: object
+      properties:
+        provider:
+          type: string
+          example: anthropic
+        apiKey:
+          type: string
+          description: Sent once in plaintext, encrypted server-side.
+          example: sk-ant-xxxxxxxx
+      required: [provider, apiKey]
+    ApiKeyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: c3d4e5f6-7890-1234-abcd-ef5678901234
+        provider:
+          type: string
+          example: anthropic
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-04T15:27:00
+    UsageSummaryResponse:
+      type: object
+      properties:
+        totalTokensIn:
+          type: integer
+          example: 152340
+        totalTokensOut:
+          type: integer
+          example: 48210
+        requestCount:
+          type: integer
+          example: 87
+        alertThreshold:
+          type: integer
+          nullable: true
+          example: 9000
+    CourseResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-f88b-12d3-a456-426655440000
+        title:
+          type: string
+          example: Object-Oriented Programming
+        description:
+          type: string
+          example: This course covers OOP by using Java with spring boot but without JPA.
+        isActive:
+          type: boolean
+          example: true
+        analysisStatus:
+          type: string
+          enum: [PENDING, ANALYZING, READY]
+          example: PENDING
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-04T16:00:00
+    CourseCreation:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Object-Oriented Programming
+        description:
+          type: string
+          example: This course covers OOP by using Java with spring boot but without JPA.
+      required: [title, description]
+    CourseUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Object-Oriented Programming
+        description:
+          type: string
+          example: This course covers OOP by using Java with spring boot but without JPA.
+    CourseActiveUpdate:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+          example: false
+      required: [isActive]
+    MaterialCreate:
+      type: object
+      properties:
+        content:
+          type: string
+          example: "Chapter 3 notes: inheritance and polymorphism..."
+        type:
+          type: string
+          enum: [SUMMARY, NOTES, PDF]
+          example: NOTES
+      required: [content, type]
+    MaterialResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+          example: "Chapter 3 notes: inheritance and polymorphism..."
+        type:
+          type: string
+          enum: [SUMMARY, NOTES, PDF]
+          example: NOTES
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-04T16:05:00
+    ConceptResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Propositional logic
+        description:
+          type: string
+          example: Logical connectives, truth tables, tautologies
+        position:
+          type: integer
+          example: 1
+        coverageStatus:
+          type: string
+          enum: [NOT_COVERED, ANTICIPATED_COVERED, COVERED]
+          example: NOT_COVERED
+    MasteryResponse:
+      type: object
+      properties:
+        conceptId:
+          type: string
+          format: uuid
+          example: 8a1b2c3d-4e5f-6789-abcd-ef0123456789
+        masteryLevel:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 65
+        lastReviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: 2026-09-03T18:20:00
+    QuizOptionPublic:
+      type: object
+      description: Option shown to the student before answering. Not includes which one is correct.
+      properties:
+        id:
+          type: string
+          format: uuid
+        text:
+          type: string
+          example: "True only if P and Q are both true"
+    QuizQuestionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        questionText:
+          type: string
+          example: "What is the correct truth table for AND (∧) between P and Q?"
+        difficulty:
+          type: string
+          enum: [EASY, MEDIUM, HARD]
+          example: EASY
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizOptionPublic"
+    QuizAttemptCreate:
+      type: object
+      properties:
+        selectedOptionId:
+          type: string
+          format: uuid
+          example: b2c3d4e5-f678-9012-abcd-ef1234567890
+      required: [selectedOptionId]
+    QuizAttemptResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        questionId:
+          type: string
+          format: uuid
+        selectedOptionId:
+          type: string
+          format: uuid
+        correctOptionId:
+          type: string
+          format: uuid
+          description: Revealed only after the attempt is submitted.
+        isCorrect:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-04T17:10:00
+    FeynmanSubmissionCreate:
+      type: object
+      properties:
+        explanationText:
+          type: string
+          example: "AND is true only when both sides are true, otherwise it's false..."
+      required: [explanationText]
+    FeynmanCriterionEvaluation:
+      type: object
+      properties:
+        name:
+          type: string
+          example: clarity
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 75
+        comment:
+          type: string
+          example: "Clear overall, but missing the falsity condition detail."
+    FeynmanEvaluation:
+      type: object
+      properties:
+        criteria:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeynmanCriterionEvaluation"
+        overallFeedback:
+          type: string
+          example: "Good grasp of the core idea, tighten up the edge cases."
+        misconceptions:
+          type: array
+          items:
+            type: string
+          example: ["Confused AND with OR in one example"]
+    FeynmanSubmissionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        explanationText:
+          type: string
+          example: "AND is true only when both sides are true, otherwise it's false..."
+        aiEvaluation:
+          $ref: "#/components/schemas/FeynmanEvaluation"
+        score:
+          type: number
+          format: float
+          example: 78.5
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-04T17:30:00
+    ChatSessionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 4b6f1a2e-9c3d-4e7a-8f21-1a2b3c4d5e6f
+        courseId:
+          type: string
+          format: uuid
+          example: 123e4567-f88b-12d3-a456-426655440000
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-05T09:15:00
+    ChatMessageResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 7d3e9a1b-5f2c-4a8e-9d0b-3c1e2f4a5b6c
+        role:
+          type: string
+          enum: [USER, ASSISTANT]
+          example: USER
+        content:
+          type: string
+          example: "Can you explain why AND is false when one side is false?"
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-05T09:16:30
+    ChatMessageCreation:
+      type: object
+      description: The role is always USER server-side; the client never sets it.
+      properties:
+        content:
+          type: string
+          example: "Can you explain why AND is false when one side is false?"
+      required: [content]
+    ChatExchangeResponse:
+      type: object
+      description: Returned after sending a message — the stored user message and the AI tutor's reply.
+      properties:
+        userMessage:
+          $ref: "#/components/schemas/ChatMessageResponse"
+        assistantMessage:
+          $ref: "#/components/schemas/ChatMessageResponse"
+    ReviewDueResponse:
+      type: object
+      description: A concept due for review today, with enough context to display without extra calls.
+      properties:
+        conceptId:
+          type: string
+          format: uuid
+          example: 8a1b2c3d-4e5f-6789-abcd-ef0123456789
+        conceptName:
+          type: string
+          example: Propositional logic
+        courseId:
+          type: string
+          format: uuid
+          example: 123e4567-f88b-12d3-a456-426655440000
+        courseTitle:
+          type: string
+          example: Théorie1
+        nextReviewAt:
+          type: string
+          format: date-time
+          example: 2026-09-05T08:00:00
+        intervalDays:
+          type: integer
+          example: 3
+    ReviewCompletion:
+      type: object
+      description: Whether the student successfully recalled the concept, used to compute the next interval.
+      properties:
+        success:
+          type: boolean
+          example: true
+      required: [success]
+    ReviewScheduleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: e1f2a3b4-5c6d-7e8f-9a0b-1c2d3e4f5a6b
+        conceptId:
+          type: string
+          format: uuid
+          example: 8a1b2c3d-4e5f-6789-abcd-ef0123456789
+        nextReviewAt:
+          type: string
+          format: date-time
+          description: Pushed further out on success, reset closer on failure.
+          example: 2026-09-08T08:00:00
+        intervalDays:
+          type: integer
+          example: 6
