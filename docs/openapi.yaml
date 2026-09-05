@@ -300,7 +300,7 @@ paths:
     parameters:
       - $ref: "#/components/parameters/CourseId"
     get:
-      tags: [ Concepts ]
+      tags: [Concepts]
       summary: List the concepts of a course
       responses:
         '200':
@@ -316,7 +316,7 @@ paths:
       - $ref: "#/components/parameters/CourseId"
       - $ref: "#/components/parameters/ConceptId"
     post:
-      tags: [ Concepts ]
+      tags: [Concepts]
       summary: Manually confirm a concept as covered in class (NOT_COVERED/ANTICIPATED_COVERED -> COVERED)
       responses:
         '200':
@@ -330,7 +330,7 @@ paths:
       - $ref: "#/components/parameters/CourseId"
       - $ref: "#/components/parameters/ConceptId"
     post:
-      tags: [ Concepts ]
+      tags: [Concepts]
       summary: Manually revert a concept back to NOT_COVERED (app went ahead of the actual class pace)
       responses:
         '200':
@@ -344,7 +344,7 @@ paths:
       - $ref: "#/components/parameters/CourseId"
       - $ref: "#/components/parameters/ConceptId"
     post:
-      tags: [ Concepts ]
+      tags: [Concepts]
       summary: Manually unlock the next concept ahead of class coverage (only allowed once mastery threshold is reached)
       responses:
         '200':
@@ -363,7 +363,7 @@ paths:
     parameters:
       - $ref: "#/components/parameters/ConceptId"
     get:
-      tags: [ Concepts ]
+      tags: [Concepts]
       summary: Current user's mastery level for a concept
       responses:
         '200':
@@ -376,7 +376,7 @@ paths:
     parameters:
       - $ref: "#/components/parameters/ConceptId"
     get:
-      tags: [ Quiz ]
+      tags: [Quiz]
       summary: Get the next adapted quiz question for this concept (difficulty based on current mastery)
       responses:
         '200':
@@ -395,7 +395,7 @@ paths:
     parameters:
       - $ref: "#/components/parameters/QuestionId"
     post:
-      tags: [ Quiz ]
+      tags: [Quiz]
       summary: Submit an answer to a quiz question
       requestBody:
         required: true
@@ -414,7 +414,7 @@ paths:
     parameters:
       - $ref: "#/components/parameters/ConceptId"
     get:
-      tags: [ Feynman ]
+      tags: [Feynman]
       summary: List this user's past Feynman submissions for a concept
       responses:
         '200':
@@ -426,7 +426,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/FeynmanSubmissionResponse"
     post:
-      tags: [ Feynman ]
+      tags: [Feynman]
       summary: Submit a free-text explanation of the concept for AI evaluation
       requestBody:
         required: true
@@ -441,6 +441,88 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FeynmanSubmissionResponse"
+  /courses/{courseId}/chat-sessions:
+    parameters:
+      - $ref: "#/components/parameters/CourseId"
+    post:
+      tags: [Chat AI]
+      summary: Create a new chat session with AI about a specific course.
+      responses:
+        '201':
+          description: Chat session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatSessionResponse"
+  /chat-sessions/{chatSessionId}/messages:
+    parameters:
+      - $ref: "#/components/parameters/ChatSessionId"
+    get:
+      tags: [Chat AI]
+      summary: Get all messages in a session
+      responses:
+        '200':
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatMessageResponse"
+    post:
+      tags: [Chat AI]
+      summary: Send a message and receive the AI tutor's reply
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatMessageCreation"
+      responses:
+        '201':
+          description: Message stored and AI reply generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatExchangeResponse"
+  /reviews/today:
+    get:
+      tags: [Reviews]
+      summary: List concepts due for review today (spaced repetition)
+      responses:
+        '200':
+          description: Concepts due for review, ordered by how overdue they are
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReviewDueResponse"
+  /reviews/{conceptId}/complete:
+    parameters:
+      - $ref: "#/components/parameters/ConceptId"
+    post:
+      tags: [Reviews]
+      summary: Mark a concept's review as done and reschedule the next one
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewCompletion"
+      responses:
+        '200':
+          description: Review recorded, next occurrence scheduled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewScheduleResponse"
+        '404':
+          description: No review scheduled for this concept
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -471,6 +553,13 @@ components:
         format: uuid
     QuestionId:
       name: questionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ChatSessionId:
+      name: chatSessionId
       in: path
       required: true
       schema:
@@ -605,6 +694,7 @@ components:
         id:
           type: string
           format: uuid
+          example: c3d4e5f6-7890-1234-abcd-ef5678901234
         provider:
           type: string
           example: anthropic
@@ -723,7 +813,7 @@ components:
           example: 1
         coverageStatus:
           type: string
-          enum: [ NOT_COVERED, ANTICIPATED_COVERED, COVERED ]
+          enum: [NOT_COVERED, ANTICIPATED_COVERED, COVERED]
           example: NOT_COVERED
     MasteryResponse:
       type: object
@@ -731,6 +821,7 @@ components:
         conceptId:
           type: string
           format: uuid
+          example: 8a1b2c3d-4e5f-6789-abcd-ef0123456789
         masteryLevel:
           type: integer
           minimum: 0
@@ -762,7 +853,7 @@ components:
           example: "What is the correct truth table for AND (∧) between P and Q?"
         difficulty:
           type: string
-          enum: [ EASY, MEDIUM, HARD ]
+          enum: [EASY, MEDIUM, HARD]
           example: EASY
         options:
           type: array
@@ -774,7 +865,8 @@ components:
         selectedOptionId:
           type: string
           format: uuid
-      required: [ selectedOptionId ]
+          example: b2c3d4e5-f678-9012-abcd-ef1234567890
+      required: [selectedOptionId]
     QuizAttemptResponse:
       type: object
       properties:
@@ -804,7 +896,7 @@ components:
         explanationText:
           type: string
           example: "AND is true only when both sides are true, otherwise it's false..."
-      required: [ explanationText ]
+      required: [explanationText]
     FeynmanCriterionEvaluation:
       type: object
       properties:
@@ -833,7 +925,7 @@ components:
           type: array
           items:
             type: string
-          example: [ "Confused AND with OR in one example" ]
+          example: ["Confused AND with OR in one example"]
     FeynmanSubmissionResponse:
       type: object
       properties:
@@ -853,3 +945,104 @@ components:
           type: string
           format: date-time
           example: 2026-09-04T17:30:00
+    ChatSessionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 4b6f1a2e-9c3d-4e7a-8f21-1a2b3c4d5e6f
+        courseId:
+          type: string
+          format: uuid
+          example: 123e4567-f88b-12d3-a456-426655440000
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-05T09:15:00
+    ChatMessageResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 7d3e9a1b-5f2c-4a8e-9d0b-3c1e2f4a5b6c
+        role:
+          type: string
+          enum: [USER, ASSISTANT]
+          example: USER
+        content:
+          type: string
+          example: "Can you explain why AND is false when one side is false?"
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-09-05T09:16:30
+    ChatMessageCreation:
+      type: object
+      description: The role is always USER server-side; the client never sets it.
+      properties:
+        content:
+          type: string
+          example: "Can you explain why AND is false when one side is false?"
+      required: [content]
+    ChatExchangeResponse:
+      type: object
+      description: Returned after sending a message — the stored user message and the AI tutor's reply.
+      properties:
+        userMessage:
+          $ref: "#/components/schemas/ChatMessageResponse"
+        assistantMessage:
+          $ref: "#/components/schemas/ChatMessageResponse"
+    ReviewDueResponse:
+      type: object
+      description: A concept due for review today, with enough context to display without extra calls.
+      properties:
+        conceptId:
+          type: string
+          format: uuid
+          example: 8a1b2c3d-4e5f-6789-abcd-ef0123456789
+        conceptName:
+          type: string
+          example: Propositional logic
+        courseId:
+          type: string
+          format: uuid
+          example: 123e4567-f88b-12d3-a456-426655440000
+        courseTitle:
+          type: string
+          example: Théorie1
+        nextReviewAt:
+          type: string
+          format: date-time
+          example: 2026-09-05T08:00:00
+        intervalDays:
+          type: integer
+          example: 3
+    ReviewCompletion:
+      type: object
+      description: Whether the student successfully recalled the concept, used to compute the next interval.
+      properties:
+        success:
+          type: boolean
+          example: true
+      required: [success]
+    ReviewScheduleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: e1f2a3b4-5c6d-7e8f-9a0b-1c2d3e4f5a6b
+        conceptId:
+          type: string
+          format: uuid
+          example: 8a1b2c3d-4e5f-6789-abcd-ef0123456789
+        nextReviewAt:
+          type: string
+          format: date-time
+          description: Pushed further out on success, reset closer on failure.
+          example: 2026-09-08T08:00:00
+        intervalDays:
+          type: integer
+          example: 6
