@@ -128,7 +128,7 @@ public class UserRepository {
         return apiKeyResponses;
     }
 
-    public ApiKeyResponse createApiKey(UUID userId, ApiKeyRequest apiKeyRequest) {
+    public ApiKeyResponse createApiKey(UUID userId, String provider, String encryptedKey) {
         String sql = """
             INSERT INTO user_api_key (id, user_id, provider, encrypted_key) VALUES (?, ?, ?, ?)
             RETURNING id, provider, created_at
@@ -140,8 +140,8 @@ public class UserRepository {
             var apiKeyId = UUID.randomUUID();
             stmt.setObject(1, apiKeyId);
             stmt.setObject(2, userId);
-            stmt.setString(3, apiKeyRequest.provider());
-            stmt.setString(4, apiKeyRequest.encryptedKey());
+            stmt.setString(3, provider);
+            stmt.setString(4, encryptedKey);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {

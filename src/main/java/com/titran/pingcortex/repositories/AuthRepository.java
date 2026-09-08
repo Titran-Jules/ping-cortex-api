@@ -17,7 +17,7 @@ import java.util.UUID;
 public class AuthRepository {
     private final DataSource dataSource;
 
-    public UserResponse register(RegisterRequest registerRequest) {
+    public UserResponse register(String email, String name, String passwordHash, String level) {
         String sql = """
             INSERT INTO \"user\" (id, email, name, password_hash, level)
             VALUES (?, ?, ?, ?, ?)
@@ -29,10 +29,10 @@ public class AuthRepository {
         ) {
             var userId = UUID.randomUUID();
             stmt.setObject(1,  userId);
-            stmt.setString(2, registerRequest.email());
-            stmt.setString(3, registerRequest.name());
-            stmt.setString(4, registerRequest.passwordHash());
-            stmt.setString(5, registerRequest.level());
+            stmt.setString(2, email);
+            stmt.setString(3, name);
+            stmt.setString(4, passwordHash);
+            stmt.setString(5, level);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {

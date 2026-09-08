@@ -1,4 +1,4 @@
 package com.titran.pingcortex.dto.request;
 
-public record ApiKeyRequest(String provider, String encryptedKey) {
+public record ApiKeyRequest(String provider, String apiKey) {
 }
