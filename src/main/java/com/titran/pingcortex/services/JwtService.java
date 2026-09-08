@@ -1,8 +1,8 @@
 package com.titran.pingcortex.services;
 
 import com.titran.pingcortex.dto.request.AccessTokenClaims;
-import com.titran.pingcortex.dto.request.JwtClaims;
 import com.titran.pingcortex.exceptions.InvalidTokenException;
+import com.titran.pingcortex.models.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -30,13 +30,13 @@ public class JwtService {
         this.accessTokenValidity = Duration.ofMinutes(accessTokenExpirationMinutes);
     }
 
-    public String generateAccessToken(JwtClaims user) {
+    public String generateAccessToken(User user) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(user.id().toString())
                 .claim("email", user.email())
                 .claim("level", user.level())
-                .claim("tokenVersion", user.level())
+                .claim("tokenVersion", user.tokenVersion())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(accessTokenValidity)))
                 .signWith(signingKey, Jwts.SIG.HS256)

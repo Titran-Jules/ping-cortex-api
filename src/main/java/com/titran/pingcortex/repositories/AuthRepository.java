@@ -31,7 +31,7 @@ public class AuthRepository {
             stmt.setObject(1,  userId);
             stmt.setString(2, registerRequest.email());
             stmt.setString(3, registerRequest.name());
-            stmt.setString(4, registerRequest.password());
+            stmt.setString(4, registerRequest.passwordHash());
             stmt.setString(5, registerRequest.level());
 
             try (ResultSet rs = stmt.executeQuery()) {

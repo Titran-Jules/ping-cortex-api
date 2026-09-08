@@ -4,6 +4,7 @@ import com.titran.pingcortex.dto.request.ApiKeyRequest;
 import com.titran.pingcortex.dto.request.UserUpdate;
 import com.titran.pingcortex.dto.response.ApiKeyResponse;
 import com.titran.pingcortex.dto.response.UserResponse;
+import com.titran.pingcortex.models.User;
 import com.titran.pingcortex.utils.ManagedConnection;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -54,6 +55,24 @@ public class UserRepository {
             stmt.setObject(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? Optional.of(userResponseMapper(rs)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Optional<User> findByEmail(String email) {
+        String sql = """
+            SELECT id, email, name, password_hash, level, token_version, alert_threshold, created_at
+            FROM \"user\"
+            WHERE email = ?;
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql);
+        ) {
+            stmt.setString(1, email);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(userMapper(rs)) : Optional.empty();
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -111,7 +130,7 @@ public class UserRepository {
 
     public ApiKeyResponse createApiKey(UUID userId, ApiKeyRequest apiKeyRequest) {
         String sql = """
-            INSERT INTO user_api_key (id, user_id, provider, apiKey) VALUES (?, ?, ?, ?)
+            INSERT INTO user_api_key (id, user_id, provider, encrypted_key) VALUES (?, ?, ?, ?)
             RETURNING id, provider, created_at
         """;
         ApiKeyResponse apiKeyResponse = null;
@@ -122,7 +141,7 @@ public class UserRepository {
             stmt.setObject(1, apiKeyId);
             stmt.setObject(2, userId);
             stmt.setString(3, apiKeyRequest.provider());
-            stmt.setString(4, apiKeyRequest.apiKey());
+            stmt.setString(4, apiKeyRequest.encryptedKey());
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -165,6 +184,19 @@ public class UserRepository {
                 rs.getString("email"),
                 rs.getString("name"),
                 rs.getString("level"),
+                rs.getObject("alert_threshold", Integer.class),
+                rs.getTimestamp("created_at").toInstant()
+        );
+    }
+
+    public User userMapper(ResultSet rs) throws SQLException {
+        return new User(
+                UUID.fromString(rs.getString("id")),
+                rs.getString("email"),
+                rs.getString("password_hash"),
+                rs.getString("name"),
+                rs.getString("level"),
+                rs.getInt("token_version"),
                 rs.getObject("alert_threshold", Integer.class),
                 rs.getTimestamp("created_at").toInstant()
         );

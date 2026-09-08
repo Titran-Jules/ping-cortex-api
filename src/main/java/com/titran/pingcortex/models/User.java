@@ -4,4 +4,4 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-public record User(UUID id, String email, String password, String name, String level, int alertThreshold, Instant createdAt, List<Course> courses, List<ChatSession> chatSessions) {}
+public record User(UUID id, String email, String password, String name, String level, int alertThreshold, int tokenVersion, Instant createdAt) {}
