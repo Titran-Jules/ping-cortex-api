@@ -41,7 +41,7 @@ public class AuthRepository {
                             rs.getString("email"),
                             rs.getString("name"),
                             rs.getString("level"),
-                            rs.getInt("alert_threshold"),
+                            rs.getObject("alert_threshold", Integer.class),
                             rs.getTimestamp("created_at").toInstant()
                     );
                 }

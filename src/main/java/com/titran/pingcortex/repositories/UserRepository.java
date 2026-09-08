@@ -92,7 +92,7 @@ public class UserRepository {
              PreparedStatement stmt = connection.get().prepareStatement(sql);
         ) {
             stmt.setString(1, userUpdate.level());
-            stmt.setInt(2, userUpdate.alertThreshold());
+            stmt.setObject(2, userUpdate.alertThreshold());
             stmt.setObject(3, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
