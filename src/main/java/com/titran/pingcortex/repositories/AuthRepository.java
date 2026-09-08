@@ -21,14 +21,14 @@ public class AuthRepository {
         String sql = """
             INSERT INTO \"user\" (id, email, name, password_hash, level)
             VALUES (?, ?, ?, ?, ?)
-            RETURNING id, email, name, level, alertThreshold, created_at
+            RETURNING id, email, name, level, alert_threshold, created_at
         """;
         UserResponse userResponse = null;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
              PreparedStatement stmt = connection.get().prepareStatement(sql);
         ) {
             var userId = UUID.randomUUID();
-            stmt.setString(1, userId.toString());
+            stmt.setObject(1,  userId);
             stmt.setString(2, registerRequest.email());
             stmt.setString(3, registerRequest.name());
             stmt.setString(4, registerRequest.password());
@@ -42,7 +42,8 @@ public class AuthRepository {
                             rs.getString("name"),
                             rs.getString("level"),
                             rs.getInt("alert_threshold"),
-                            rs.getTimestamp("created_at").toInstant()                    )
+                            rs.getTimestamp("created_at").toInstant()
+                    );
                 }
             }
         } catch (SQLException e) {

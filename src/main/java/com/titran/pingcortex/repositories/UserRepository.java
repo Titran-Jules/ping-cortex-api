@@ -51,7 +51,7 @@ public class UserRepository {
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
             PreparedStatement stmt = connection.get().prepareStatement(sql);
         ) {
-            stmt.setString(1, id.toString());
+            stmt.setObject(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? Optional.of(userResponseMapper(rs)) : Optional.empty();
             }
@@ -64,7 +64,7 @@ public class UserRepository {
         String sql = """
             UPDATE \"user\"
                 SET level = ?,
-                alert_threshold = ?,
+                alert_threshold = ?
             WHERE id = ?
             RETURNING id, email, name, level, alert_threshold, created_at
         """;
@@ -74,7 +74,7 @@ public class UserRepository {
         ) {
             stmt.setString(1, userUpdate.level());
             stmt.setInt(2, userUpdate.alertThreshold());
-            stmt.setString(3, id.toString());
+            stmt.setObject(3, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     userResponse = userResponseMapper(rs);
@@ -97,7 +97,7 @@ public class UserRepository {
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
             PreparedStatement stmt = connection.get().prepareStatement(sql);
         ) {
-            stmt.setString(1, id.toString());
+            stmt.setObject(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     apiKeyResponses.add(apiKeyResponseMapper(rs));
@@ -111,8 +111,7 @@ public class UserRepository {
 
     public ApiKeyResponse createApiKey(UUID userId, ApiKeyRequest apiKeyRequest) {
         String sql = """
-            INSERT INTO user_api_key (id, provider, apiKey) VALUES (?, ?, ?)
-            WHERE user_id = ?
+            INSERT INTO user_api_key (id, user_id, provider, apiKey) VALUES (?, ?, ?, ?)
             RETURNING id, provider, created_at
         """;
         ApiKeyResponse apiKeyResponse = null;
@@ -120,10 +119,10 @@ public class UserRepository {
             PreparedStatement stmt = connection.get().prepareStatement(sql);
         ) {
             var apiKeyId = UUID.randomUUID();
-            stmt.setString(1, apiKeyId.toString());
-            stmt.setString(2, apiKeyRequest.provider());
-            stmt.setString(3, apiKeyRequest.apiKey());
-            stmt.setString(4, userId.toString());
+            stmt.setObject(1, apiKeyId);
+            stmt.setObject(2, userId);
+            stmt.setString(3, apiKeyRequest.provider());
+            stmt.setString(4, apiKeyRequest.apiKey());
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -144,10 +143,10 @@ public class UserRepository {
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
             PreparedStatement stmt = connection.get().prepareStatement(sql);
         ) {
-            stmt.setString(1, userId.toString());
-            stmt.setString(2, apiKeyId.toString());
+            stmt.setObject(1, userId);
+            stmt.setObject(2, apiKeyId);
 
-            stmt.executeQuery();
+            stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -166,7 +165,7 @@ public class UserRepository {
                 rs.getString("email"),
                 rs.getString("name"),
                 rs.getString("level"),
-                rs.getInt("alert_threshold"),
+                rs.getObject("alert_threshold", Integer.class),
                 rs.getTimestamp("created_at").toInstant()
         );
     }
