@@ -1,7 +1,7 @@
 package com.titran.pingcortex.repositories;
 
 import com.titran.pingcortex.dto.request.ApiKeyRequest;
-import com.titran.pingcortex.dto.request.UserUpdateProfile;
+import com.titran.pingcortex.dto.request.UserUpdate;
 import com.titran.pingcortex.dto.response.ApiKeyResponse;
 import com.titran.pingcortex.dto.response.UserResponse;
 import com.titran.pingcortex.utils.ManagedConnection;
@@ -60,7 +60,7 @@ public class UserRepository {
         }
     }
 
-    public UserResponse updateProfile(UUID id, UserUpdateProfile userUpdateProfile) {
+    public UserResponse updateProfile(UUID id, UserUpdate userUpdate) {
         String sql = """
             UPDATE \"user\"
                 SET level = ?,
@@ -72,8 +72,8 @@ public class UserRepository {
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
              PreparedStatement stmt = connection.get().prepareStatement(sql);
         ) {
-            stmt.setString(1, userUpdateProfile.level());
-            stmt.setInt(2, userUpdateProfile.alertThreshold());
+            stmt.setString(1, userUpdate.level());
+            stmt.setInt(2, userUpdate.alertThreshold());
             stmt.setString(3, id.toString());
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -111,8 +111,7 @@ public class UserRepository {
 
     public ApiKeyResponse createApiKey(UUID userId, ApiKeyRequest apiKeyRequest) {
         String sql = """
-            INSERT INTO (id, provider, apiKey) VALUES (?, ?, ?)
-            FROM user_api_key
+            INSERT INTO user_api_key (id, provider, apiKey) VALUES (?, ?, ?)
             WHERE user_id = ?
             RETURNING id, provider, created_at
         """;
