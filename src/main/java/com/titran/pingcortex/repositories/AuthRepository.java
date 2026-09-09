@@ -1,6 +1,7 @@
 package com.titran.pingcortex.repositories;
 
 import com.titran.pingcortex.dto.response.UserResponse;
+import com.titran.pingcortex.exceptions.DataAccessException;
 import com.titran.pingcortex.utils.ManagedConnection;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -46,7 +47,7 @@ public class AuthRepository {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("User registration failed", e);
         }
         return userResponse;
     }

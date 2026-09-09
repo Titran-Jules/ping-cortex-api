@@ -39,7 +39,7 @@ public class UserRepository {
                 users.add(userResponseMapper(rs));
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("Failed to find all users", e);
         }
         return users;
     }
@@ -75,7 +75,7 @@ public class UserRepository {
                 return rs.next() ? Optional.of(userMapper(rs)) : Optional.empty();
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("Failed to find  user by email", e);
         }
     }
 
@@ -100,7 +100,7 @@ public class UserRepository {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("Failed to update user profile", e);
         }
         return userResponse;
     }
@@ -123,7 +123,7 @@ public class UserRepository {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("Failed to find user's api keys", e);
         }
         return apiKeyResponses;
     }
@@ -149,7 +149,7 @@ public class UserRepository {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("Failed to create api key", e);
         }
         return apiKeyResponse;
     }
@@ -167,7 +167,7 @@ public class UserRepository {
 
             stmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("Failed to  delete api key", e);
         }
     }
 
