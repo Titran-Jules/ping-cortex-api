@@ -4,6 +4,7 @@ import com.titran.pingcortex.dto.request.ApiKeyRequest;
 import com.titran.pingcortex.dto.request.UserUpdate;
 import com.titran.pingcortex.dto.response.ApiKeyResponse;
 import com.titran.pingcortex.dto.response.UserResponse;
+import com.titran.pingcortex.exceptions.DataAccessException;
 import com.titran.pingcortex.models.User;
 import com.titran.pingcortex.utils.ManagedConnection;
 import lombok.AllArgsConstructor;
@@ -43,21 +44,20 @@ public class UserRepository {
         return users;
     }
 
-    public Optional<UserResponse> findById(UUID id) {
+    public Optional<User> findByIdWithCredentials(UUID id) {
         String sql = """
-            SELECT id, email, name, level, alert_threshold, created_at
-            FROM \"user\"
-            WHERE id = ?;
+            SELECT id, email, name, password_hash, level, token_version, alert_threshold, created_at
+            FROM "user"
+            WHERE id = ?
         """;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
-            PreparedStatement stmt = connection.get().prepareStatement(sql);
-        ) {
+             PreparedStatement stmt = connection.get().prepareStatement(sql)) {
             stmt.setObject(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next() ? Optional.of(userResponseMapper(rs)) : Optional.empty();
+                return rs.next() ? Optional.of(userMapper(rs)) : Optional.empty();
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("Failed to find user by id", e);
         }
     }
 

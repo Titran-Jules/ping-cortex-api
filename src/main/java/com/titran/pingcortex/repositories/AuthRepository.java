@@ -1,6 +1,5 @@
 package com.titran.pingcortex.repositories;
 
-import com.titran.pingcortex.dto.request.RegisterRequest;
 import com.titran.pingcortex.dto.response.UserResponse;
 import com.titran.pingcortex.utils.ManagedConnection;
 import lombok.AllArgsConstructor;
@@ -19,7 +18,7 @@ public class AuthRepository {
 
     public UserResponse register(String email, String name, String passwordHash, String level) {
         String sql = """
-            INSERT INTO \"user\" (id, email, name, password_hash, level)
+            INSERT INTO "user" (id, email, name, password_hash, level)
             VALUES (?, ?, ?, ?, ?)
             RETURNING id, email, name, level, alert_threshold, created_at
         """;
