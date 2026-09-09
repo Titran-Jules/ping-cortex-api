@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.util.List;
 
 @Component
-public class JwtAuthentificationFilter extends OncePerRequestFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public static final String USER_ID_ATTRIBUTE = "authenticatedUserId";
 
     private static final List<String> PUBLIC_PATHS = List.of(
@@ -31,7 +31,7 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserRepository userRepository;
 
-    public JwtAuthentificationFilter(JwtService jwtService, UserRepository userRepository) {
+    public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository) {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
     }
