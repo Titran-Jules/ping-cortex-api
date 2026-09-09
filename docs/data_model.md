@@ -14,7 +14,7 @@ Concept Breakdown
     concept — id, course_id, name, description, order → the AI breaks the course into trackable subtopics
     user_concept_mastery — id, user_id, concept_id, mastery_level (0–100 or enum), last_reviewed_at → drives adaptive difficulty and the “review before forgetting” logic
 
-Quizze / Practice
+Quiz / Practice
 
     quiz_question — id, concept_id, question_text, difficulty (easy/medium/hard), created_at
     quiz_option — id, question_id, text, is_correct
