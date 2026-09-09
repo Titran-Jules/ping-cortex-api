@@ -79,6 +79,19 @@ public class UserRepository {
         }
     }
 
+    public Optional<Integer> findTokenVersion(UUID id) {
+        String sql = "SELECT token_version FROM \"user\" WHERE id = ?";
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+             PreparedStatement stmt = connection.get().prepareStatement(sql)) {
+            stmt.setObject(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(rs.getInt("token_version")) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find token version", e);
+        }
+    }
+
     public UserResponse updateProfile(UUID id, UserUpdate userUpdate) {
         String sql = """
             UPDATE \"user\"
