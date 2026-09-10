@@ -44,6 +44,24 @@ public class UserRepository {
         return users;
     }
 
+    public Optional<UserResponse> findMe(UUID id) {
+        String sql = """
+            SELECT id, email, name, level, alert_threshold, created_at
+            FROM \"user\"
+            WHERE id = ?;
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(userResponseMapper(rs)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find user by id", e);
+        }
+    }
+
     public Optional<User> findByIdWithCredentials(UUID id) {
         String sql = """
             SELECT id, email, name, password_hash, level, token_version, alert_threshold, created_at
