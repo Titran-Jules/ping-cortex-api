@@ -11,6 +11,8 @@ import com.titran.pingcortex.repositories.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @AllArgsConstructor
 public class AuthService {
@@ -49,7 +51,7 @@ public class AuthService {
         return new LoginResult(newAccessToken, rotation.newRawToken());
     }
 
-    public void logout(String rawRefreshToken) {
-        refreshTokenService.revoke(rawRefreshToken);
+    public void logout(UUID authenticatedUserId, String rawRefreshToken) {
+        refreshTokenService.revoke(authenticatedUserId, rawRefreshToken);
     }
 }

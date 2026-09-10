@@ -71,10 +71,15 @@ public class RefreshTokenService {
         return new RotationResult(existing.userId(), newRawToken);
     }
 
-    public void revoke(String rawToken) {
-        refreshTokenRepository.findByTokenHash(hash(rawToken))
-                .ifPresent(token -> refreshTokenRepository.revoke(token.id()));
+    public void revoke(UUID expectedUserId, String rawToken) {
+        refreshTokenRepository.findByTokenHash(hash(rawToken)).ifPresent(token -> {
+            if (!token.userId().equals(expectedUserId)) {
+                throw new InvalidRefreshTokenException();
+            }
+            refreshTokenRepository.revoke(token.id());
+        });
     }
+
 
     public record RotationResult(UUID userId, String newRawToken) {}
 }
