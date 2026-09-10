@@ -105,7 +105,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserResponse"
-    patch:
+        patch:
       tags: [User]
       summary: Update the current user's profile
       requestBody:

@@ -1,4 +1,4 @@
-package com.titran.pingcortex.models;
+package com.titran.pingcortex.model;
 
 public enum CourseMaterialType {
     SUMMARY,
