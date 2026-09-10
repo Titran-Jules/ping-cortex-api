@@ -16,6 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final EncryptionService encryptionService;
 
     public List<UserResponse> findAllUsers() {
         return userRepository.findAll();
@@ -31,5 +32,14 @@ public class UserService {
 
     public List<ApiKeyResponse> findMyApiKeys(UUID id) {
         return userRepository.findMyApiKeys(id);
+    }
+
+    public ApiKeyResponse createApiKey(UUID id, ApiKeyRequest apiKeyRequest) {
+        String encryptedApiKey = encryptionService.encrypt(apiKeyRequest.apiKey());
+        return userRepository.createApiKey(id, apiKeyRequest.provider(), encryptedApiKey);
+    }
+
+    public void deleteApiKey(UUID id, UUID apiKeyId) {
+        userRepository.deleteApiKey(id, apiKeyId);
     }
 }
