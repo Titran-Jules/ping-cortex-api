@@ -46,8 +46,8 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createApiKey(userId, apiKeyRequest));
     }
 
-    @DeleteMapping("/users/me/api-keys")
-    public ResponseEntity<Void> deleteApiKey(HttpServletRequest request, UUID apiKeyId) {
+    @DeleteMapping("/users/me/api-keys/{apiKeyId}")
+    public ResponseEntity<Void> deleteApiKey(HttpServletRequest request, @PathVariable UUID apiKeyId) {
         UUID userId = CurrentUser.id(request);
         userService.deleteApiKey(userId, apiKeyId);
         return ResponseEntity.noContent().build();
