@@ -5,6 +5,7 @@ import com.titran.pingcortex.dto.request.RegisterRequest;
 import com.titran.pingcortex.dto.response.LoginResult;
 import com.titran.pingcortex.dto.response.UserResponse;
 import com.titran.pingcortex.exception.InvalidCredentialsException;
+import com.titran.pingcortex.exception.UserNotFoundException;
 import com.titran.pingcortex.model.User;
 import com.titran.pingcortex.repository.AuthRepository;
 import com.titran.pingcortex.repository.UserRepository;
@@ -36,7 +37,7 @@ public class AuthService {
 
     public LoginResult login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email()).
-                orElseThrow(InvalidCredentialsException::new);
+                orElseThrow(UserNotFoundException::new);
         if (!passwordService.matches(request.password(), user.passwordHash())) {
             throw new InvalidCredentialsException();
         }
@@ -48,7 +49,7 @@ public class AuthService {
     public LoginResult refresh(String rawRefreshToken) {
         RefreshTokenService.RotationResult rotation = refreshTokenService.validateAndRotate(rawRefreshToken);
         User user = userRepository.findByIdWithCredentials(rotation.userId()).
-                orElseThrow(InvalidCredentialsException::new);
+                orElseThrow(UserNotFoundException::new);
         String newAccessToken = jwtService.generateAccessToken(user);
         return new LoginResult(newAccessToken, rotation.newRawToken());
     }
