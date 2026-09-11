@@ -3,7 +3,6 @@ package com.titran.pingcortex.security;
 import com.titran.pingcortex.dto.request.AccessTokenClaims;
 import com.titran.pingcortex.exception.InvalidTokenException;
 import com.titran.pingcortex.repository.UserRepository;
-import com.titran.pingcortex.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

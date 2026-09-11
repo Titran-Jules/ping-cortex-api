@@ -8,6 +8,8 @@ import com.titran.pingcortex.exception.InvalidCredentialsException;
 import com.titran.pingcortex.model.User;
 import com.titran.pingcortex.repository.AuthRepository;
 import com.titran.pingcortex.repository.UserRepository;
+import com.titran.pingcortex.security.JwtService;
+import com.titran.pingcortex.security.PasswordService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 

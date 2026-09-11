@@ -1,4 +1,4 @@
-package com.titran.pingcortex.service;
+package com.titran.pingcortex.security;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
