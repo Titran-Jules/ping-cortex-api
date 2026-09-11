@@ -1,4 +1,4 @@
-package com.titran.pingcortex.service;
+package com.titran.pingcortex.security;
 
 import com.titran.pingcortex.dto.request.AccessTokenClaims;
 import com.titran.pingcortex.exception.InvalidTokenException;

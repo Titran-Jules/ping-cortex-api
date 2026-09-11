@@ -3,6 +3,7 @@ package com.titran.pingcortex.controller;
 import com.titran.pingcortex.dto.request.ApiKeyRequest;
 import com.titran.pingcortex.dto.request.UserUpdate;
 import com.titran.pingcortex.dto.response.ApiKeyResponse;
+import com.titran.pingcortex.dto.response.UsageSummaryResponse;
 import com.titran.pingcortex.dto.response.UserResponse;
 import com.titran.pingcortex.security.CurrentUser;
 import com.titran.pingcortex.service.UserService;
@@ -51,5 +52,11 @@ public class UserController {
         UUID userId = CurrentUser.id(request);
         userService.deleteApiKey(userId, apiKeyId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/users/me/usage")
+    public ResponseEntity<UsageSummaryResponse> getUsageSummary(HttpServletRequest request) {
+        UUID userId = CurrentUser.id(request);
+        return ResponseEntity.ok(userService.getUsageSummary(userId));
     }
 }

@@ -1,4 +1,4 @@
-package com.titran.pingcortex.service;
+package com.titran.pingcortex.security;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
