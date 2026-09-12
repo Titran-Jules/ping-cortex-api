@@ -151,7 +151,7 @@ public class CourseRepository {
         }
     }
 
-    public CourseResponse courseRowMapper(ResultSet rs) throws SQLException {
+    private CourseResponse courseRowMapper(ResultSet rs) throws SQLException {
         return new CourseResponse(
                 UUID.fromString(rs.getString("id")),
                 rs.getString("title"),

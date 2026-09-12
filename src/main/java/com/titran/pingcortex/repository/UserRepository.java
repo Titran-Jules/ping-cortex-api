@@ -201,16 +201,16 @@ public class UserRepository {
         }
     }
 
-    public ApiKeyResponse apiKeyResponseMapper(ResultSet rs) throws SQLException {
+    private ApiKeyResponse apiKeyResponseMapper(ResultSet rs) throws SQLException {
         return new ApiKeyResponse(
-                UUID.fromString(rs.getString("id")),
+                rs.getObject("id",  UUID.class),
                 rs.getString("provider"),
                 rs.getTimestamp("created_at").toInstant()
         );
     }
-    public UserResponse userResponseMapper(ResultSet rs) throws SQLException {
+    private UserResponse userResponseMapper(ResultSet rs) throws SQLException {
         return new UserResponse(
-                UUID.fromString(rs.getString("id")),
+                rs.getObject("id", UUID.class),
                 rs.getString("email"),
                 rs.getString("name"),
                 rs.getString("level"),
@@ -219,9 +219,9 @@ public class UserRepository {
         );
     }
 
-    public User userMapper(ResultSet rs) throws SQLException {
+    private User userMapper(ResultSet rs) throws SQLException {
         return new User(
-                UUID.fromString(rs.getString("id")),
+                rs.getObject("id", UUID.class),
                 rs.getString("email"),
                 rs.getString("password_hash"),
                 rs.getString("name"),
