@@ -1,6 +1,6 @@
 package com.titran.pingcortex.model;
 
-public enum CourseMaterialType {
+public enum MaterialType {
     SUMMARY,
     NOTES,
     PDF
