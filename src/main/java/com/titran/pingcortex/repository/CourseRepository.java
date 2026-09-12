@@ -6,13 +6,11 @@ import com.titran.pingcortex.dto.request.CourseUpdateActive;
 import com.titran.pingcortex.dto.response.CourseResponse;
 import com.titran.pingcortex.exception.DataAccessException;
 import com.titran.pingcortex.model.AnalysisStatus;
-import com.titran.pingcortex.model.Course;
 import com.titran.pingcortex.util.ManagedConnection;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
-import java.lang.management.ManagementFactory;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -57,7 +55,7 @@ public class CourseRepository {
         String sql = "";
         if (isActive != null) {
             sql = """
-                SELECT id, title, description, isActive, analysis_status, created_at
+                SELECT id, title, description, is_active, analysis_status, created_at
                 FROM course
                 WHERE is_active = ? AND user_id = ?
             """;
@@ -109,7 +107,7 @@ public class CourseRepository {
         }
     }
 
-    public CourseResponse updateCourse(UUID userId, UUID courseId, CourseUpdate request) {
+    public Optional<CourseResponse> updateCourse(UUID userId, UUID courseId, CourseUpdate request) {
         String sql = """
             UPDATE course
             SET title = ?,
@@ -117,7 +115,6 @@ public class CourseRepository {
             WHERE user_id = ? AND id = ?
             RETURNING id, title, description, is_active, analysis_status, created_at
         """;
-        CourseResponse course = null;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
             PreparedStatement stmt = connection.get().prepareStatement(sql)
         ) {
@@ -126,24 +123,20 @@ public class CourseRepository {
             stmt.setObject(3, userId);
             stmt.setObject(4, courseId);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    course = courseRowMapper(rs);
-                }
+                return rs.next() ? Optional.of(courseRowMapper(rs)) : Optional.empty();
             }
         } catch (SQLException e) {
             throw new DataAccessException("Failed to update course", e);
         }
-        return course;
     }
 
-    public CourseResponse updateCourseActive(UUID userId, UUID courseId, CourseUpdateActive request) {
+    public Optional<CourseResponse> updateCourseActive(UUID userId, UUID courseId, CourseUpdateActive request) {
         String sql = """
             UPDATE course
             SET is_active = ?
             WHERE user_id = ? AND id = ?
             RETURNING id, title, description, is_active, analysis_status, created_at
         """;
-        CourseResponse course = null;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
             PreparedStatement stmt = connection.get().prepareStatement(sql)
         ) {
@@ -151,12 +144,11 @@ public class CourseRepository {
             stmt.setObject(2, userId);
             stmt.setObject(3, courseId);
             try (ResultSet rs = stmt.executeQuery()) {
-                course = courseRowMapper(rs);
+                return rs.next() ? Optional.of(courseRowMapper(rs)) : Optional.empty();
             }
         } catch (SQLException e) {
             throw new DataAccessException("Failed to update course", e);
         }
-        return course;
     }
 
     public CourseResponse courseRowMapper(ResultSet rs) throws SQLException {

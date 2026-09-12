@@ -43,18 +43,14 @@ public class CourseController {
     @PatchMapping("/courses/{courseId}")
     public ResponseEntity<CourseResponse> updateCourse(@PathVariable UUID courseId, @RequestBody CourseUpdate courseUpdate, HttpServletRequest request) {
         UUID userId = CurrentUser.id(request);
-        if (courseService.findCourseById(userId, courseId).isPresent()) {
-            return ResponseEntity.ok(courseService.updateCourse(userId, courseId, courseUpdate));
-        }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(courseService.updateCourse(userId, courseId, courseUpdate)
+                .orElseThrow(CourseNotFoundException::new));
     }
 
     @PatchMapping("/courses/{courseId}/active")
     public ResponseEntity<CourseResponse> updateCourseActive(@PathVariable UUID courseId, @RequestBody CourseUpdateActive courseUpdateActive, HttpServletRequest request) {
         UUID userId = CurrentUser.id(request);
-        if (courseService.findCourseById(userId, courseId).isPresent()) {
-            return ResponseEntity.ok(courseService.updateCourseActive(userId, courseId, courseUpdateActive));
-        }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(courseService.updateCourseActive(userId, courseId, courseUpdateActive)
+                .orElseThrow(CourseNotFoundException::new));
     }
 }

@@ -29,11 +29,11 @@ public class CourseService {
         return courseRepository.createCourse(userId, courseRequest);
     }
 
-    public CourseResponse updateCourse(UUID userId, UUID courseId, CourseUpdate  courseUpdate) {
+    public Optional<CourseResponse> updateCourse(UUID userId, UUID courseId, CourseUpdate  courseUpdate) {
         return courseRepository.updateCourse(userId, courseId, courseUpdate);
     }
 
-    public CourseResponse updateCourseActive(UUID userId, UUID courseId, CourseUpdateActive courseUpdateActive) {
+    public Optional<CourseResponse> updateCourseActive(UUID userId, UUID courseId, CourseUpdateActive courseUpdateActive) {
         return courseRepository.updateCourseActive(userId, courseId, courseUpdateActive);
     }
 }
