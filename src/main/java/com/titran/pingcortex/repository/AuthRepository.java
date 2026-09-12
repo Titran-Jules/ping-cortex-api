@@ -37,7 +37,7 @@ public class AuthRepository {
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     userResponse = new UserResponse(
-                            UUID.fromString(rs.getString("id")),
+                            rs.getObject("id", UUID.class),
                             rs.getString("email"),
                             rs.getString("name"),
                             rs.getString("level"),
