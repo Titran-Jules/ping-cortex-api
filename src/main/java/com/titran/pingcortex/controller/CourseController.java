@@ -1,11 +1,14 @@
 package com.titran.pingcortex.controller;
 
+import com.titran.pingcortex.dto.request.CourseMaterialRequest;
 import com.titran.pingcortex.dto.request.CourseRequest;
 import com.titran.pingcortex.dto.request.CourseUpdate;
 import com.titran.pingcortex.dto.request.CourseUpdateActive;
+import com.titran.pingcortex.dto.response.CourseMaterialResponse;
 import com.titran.pingcortex.dto.response.CourseResponse;
 import com.titran.pingcortex.exception.CourseNotFoundException;
 import com.titran.pingcortex.security.CurrentUser;
+import com.titran.pingcortex.service.CourseMaterialService;
 import com.titran.pingcortex.service.CourseService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
@@ -20,6 +23,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CourseController {
     private final CourseService courseService;
+    private final CourseMaterialService courseMaterialService;
 
     @GetMapping("/courses")
     public ResponseEntity<List<CourseResponse>> getAllCourses(@RequestParam(required = false) Boolean isActive, HttpServletRequest request) {
@@ -52,5 +56,18 @@ public class CourseController {
         UUID userId = CurrentUser.id(request);
         return ResponseEntity.ok(courseService.updateCourseActive(userId, courseId, courseUpdateActive)
                 .orElseThrow(CourseNotFoundException::new));
+    }
+
+    @GetMapping("/courses/{courseId}/materials")
+    public ResponseEntity<List<CourseMaterialResponse>> getAllCourseMaterials(@PathVariable UUID courseId, HttpServletRequest request) {
+        UUID userId = CurrentUser.id(request);
+        return ResponseEntity.ok(courseMaterialService.findAll(userId, courseId));
+    }
+
+    @PostMapping("/courses/{courseId}/materials")
+    public ResponseEntity<CourseMaterialResponse> createCourseMaterial(@PathVariable UUID courseId, @RequestBody CourseMaterialRequest courseMaterialRequest, HttpServletRequest request) {
+        UUID userId = CurrentUser.id(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(courseMaterialService.create(userId, courseId, courseMaterialRequest));
     }
 }
