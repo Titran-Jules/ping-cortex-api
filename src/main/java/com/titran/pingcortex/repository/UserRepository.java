@@ -4,6 +4,7 @@ import com.titran.pingcortex.dto.request.UserUpdate;
 import com.titran.pingcortex.dto.response.ApiKeyResponse;
 import com.titran.pingcortex.dto.response.UserResponse;
 import com.titran.pingcortex.exception.DataAccessException;
+import com.titran.pingcortex.model.AiProvider;
 import com.titran.pingcortex.model.User;
 import com.titran.pingcortex.util.ManagedConnection;
 import lombok.AllArgsConstructor;
@@ -158,7 +159,7 @@ public class UserRepository {
         return apiKeyResponses;
     }
 
-    public ApiKeyResponse createApiKey(UUID userId, String provider, String encryptedKey) {
+    public ApiKeyResponse createApiKey(UUID userId, AiProvider provider, String encryptedKey) {
         String sql = """
             INSERT INTO user_api_key (id, user_id, provider, encrypted_key) VALUES (?, ?, ?, ?)
             RETURNING id, provider, created_at
@@ -170,7 +171,7 @@ public class UserRepository {
             var apiKeyId = UUID.randomUUID();
             stmt.setObject(1, apiKeyId);
             stmt.setObject(2, userId);
-            stmt.setString(3, provider);
+            stmt.setString(3, provider.name());
             stmt.setString(4, encryptedKey);
 
             try (ResultSet rs = stmt.executeQuery()) {
