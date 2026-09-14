@@ -48,6 +48,12 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred."));
     }
 
+    @ExceptionHandler(UnsupportedProviderException.class)
+    public ResponseEntity<ErrorResponse> handleUnsupportedProvider(UnsupportedProviderException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("UNSUPPORTED_PROVIDER", e.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception e) {
         log.error("Unhandled exception", e);
