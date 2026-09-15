@@ -110,7 +110,7 @@ public class AnthropicAiClient implements AiClient {
             Pas de format JSON ici - reponse en texte libre, conversationnel.
         """.formatted(courseContext);
 
-        List<ChatTurn> messages = new ArrayList<>();
+        List<ChatTurn> messages = new ArrayList<>(history);
         messages.add(new ChatTurn("user", newMessage));
         return callApi(apiKey, systemPrompt, messages);
     }
