@@ -13,7 +13,7 @@ public interface AiClient {
             List<String> materialContents
     );
 
-    QuizOptionSuggestion generateQuiz(
+    QuizQuestionSuggestion generateQuiz(
             String apiKey,
             String conceptName,
             String conceptDescription,
