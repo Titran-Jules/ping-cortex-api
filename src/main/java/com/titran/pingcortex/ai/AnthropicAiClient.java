@@ -107,7 +107,7 @@ public class AnthropicAiClient implements AiClient {
         String systemPrompt = """
             Tu es un tuteur pedagogique pour ce cours : %s.
             Reponds de facon claire et encourageante, adaptee au niveau de l'eleve.
-            Pas de format JSON ici - reponse en texte libre, conversationnel.    
+            Pas de format JSON ici - reponse en texte libre, conversationnel.
         """.formatted(courseContext);
 
         List<ChatTurn> messages = new ArrayList<>();
