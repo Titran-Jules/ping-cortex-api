@@ -1,10 +1,12 @@
 package com.titran.pingcortex.controller;
 
 import com.titran.pingcortex.dto.request.ApiKeyRequest;
+import com.titran.pingcortex.dto.request.ApiKeyStatus;
 import com.titran.pingcortex.dto.request.UserUpdate;
 import com.titran.pingcortex.dto.response.ApiKeyResponse;
 import com.titran.pingcortex.dto.response.UsageSummaryResponse;
 import com.titran.pingcortex.dto.response.UserResponse;
+import com.titran.pingcortex.exception.ApiKeyNotFoundException;
 import com.titran.pingcortex.security.CurrentUser;
 import com.titran.pingcortex.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,6 +47,13 @@ public class UserController {
     public ResponseEntity<ApiKeyResponse> createApiKey(HttpServletRequest request, @RequestBody ApiKeyRequest apiKeyRequest) {
         UUID userId = CurrentUser.id(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createApiKey(userId, apiKeyRequest));
+    }
+
+    @PatchMapping("/users/me/api-keys/{apiKeyId}")
+    public ResponseEntity<ApiKeyResponse> updateApiKeyStatus(HttpServletRequest request, @RequestBody ApiKeyStatus status, @PathVariable UUID apiKeyId) {
+        UUID userId = CurrentUser.id(request);
+        return ResponseEntity.ok(userService.updateApiKeyStatus(userId, apiKeyId, status)
+                .orElseThrow(ApiKeyNotFoundException::new));
     }
 
     @DeleteMapping("/users/me/api-keys/{apiKeyId}")

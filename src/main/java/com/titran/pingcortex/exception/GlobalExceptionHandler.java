@@ -41,6 +41,12 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("COURSE_NOT_FOUND", e.getMessage()));
     }
 
+    @ExceptionHandler(ApiKeyNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleApiKeyNotFound(ApiKeyNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("API_KEY_NOT_FOUND", e.getMessage()));
+    }
+
     @ExceptionHandler(UnsupportedProviderException.class)
     public ResponseEntity<ErrorResponse> handleUnsupportedProvider(UnsupportedProviderException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
