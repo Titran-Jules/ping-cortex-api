@@ -153,6 +153,21 @@ paths:
   /users/me/api-keys/{apiKeyId}:
     parameters:
       - $ref: "#/components/parameters/ApiKeyId"
+    patch:
+      tags: [User]
+      summary: Change activity status of an api key (others will be deactivated if isActive = true)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyActive"
+      responses:
+        '200':
+          description: Api key activated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyResponse"
     delete:
       tags: [User]
       summary: Delete a stored API key
@@ -698,10 +713,20 @@ components:
         provider:
           type: string
           example: anthropic
+        isActive:
+          type: boolean
+          example: true
         createdAt:
           type: string
           format: date-time
           example: 2026-09-04T15:27:00
+    ApiKeyActive:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+          example: true
+      required: [isActive]
     UsageSummaryResponse:
       type: object
       properties:

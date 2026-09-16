@@ -1,15 +1,18 @@
 package com.titran.pingcortex.repository;
 
+import com.titran.pingcortex.dto.request.ApiKeyStatus;
 import com.titran.pingcortex.dto.request.UserUpdate;
 import com.titran.pingcortex.dto.response.ApiKeyResponse;
 import com.titran.pingcortex.dto.response.UserResponse;
 import com.titran.pingcortex.exception.DataAccessException;
+import com.titran.pingcortex.model.AiProvider;
 import com.titran.pingcortex.model.User;
 import com.titran.pingcortex.util.ManagedConnection;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -137,7 +140,7 @@ public class UserRepository {
 
     public List<ApiKeyResponse> findMyApiKeys(UUID id) {
         String sql = """
-            SELECT id, provider, created_at
+            SELECT id, provider, is_active, created_at
             FROM user_api_key
             WHERE user_id = ?
             ORDER BY created_at DESC;
@@ -158,10 +161,10 @@ public class UserRepository {
         return apiKeyResponses;
     }
 
-    public ApiKeyResponse createApiKey(UUID userId, String provider, String encryptedKey) {
+    public ApiKeyResponse createApiKey(UUID userId, AiProvider provider, String encryptedKey) {
         String sql = """
             INSERT INTO user_api_key (id, user_id, provider, encrypted_key) VALUES (?, ?, ?, ?)
-            RETURNING id, provider, created_at
+            RETURNING id, provider, is_active, created_at
         """;
         ApiKeyResponse apiKeyResponse = null;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
@@ -170,7 +173,7 @@ public class UserRepository {
             var apiKeyId = UUID.randomUUID();
             stmt.setObject(1, apiKeyId);
             stmt.setObject(2, userId);
-            stmt.setString(3, provider);
+            stmt.setString(3, provider.name());
             stmt.setString(4, encryptedKey);
 
             try (ResultSet rs = stmt.executeQuery()) {
@@ -182,6 +185,57 @@ public class UserRepository {
             throw new DataAccessException("Failed to create api key", e);
         }
         return apiKeyResponse;
+    }
+
+    public Optional<ApiKeyResponse> updateApiKeyStatus(UUID userId, UUID apiKeyId, ApiKeyStatus status) {
+        String sql1 = """
+            UPDATE user_api_key
+            SET is_active = ?
+            WHERE id = ? AND user_id = ?
+            RETURNING id, provider, is_active, created_at
+        """;
+        String sql2 = """
+            UPDATE user_api_key
+            SET is_active = FALSE
+            WHERE id != ? AND user_id = ? AND is_active = TRUE
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource)) {
+            Connection conn = connection.get();
+            conn.setAutoCommit(false);
+            ApiKeyResponse apiKeyResponse = null;
+            try {
+                try (PreparedStatement stmtTarget = conn.prepareStatement(sql1)) {
+                    stmtTarget.setBoolean(1, status.isActive());
+                    stmtTarget.setObject(2, apiKeyId);
+                    stmtTarget.setObject(3, userId);
+                    try (ResultSet rs = stmtTarget.executeQuery()) {
+                        if (rs.next()) {
+                            apiKeyResponse = apiKeyResponseMapper(rs);
+                        } else {
+                            conn.rollback();
+                            return Optional.empty();
+                        }
+                    }
+                }
+                if (status.isActive()) {
+                    try (PreparedStatement stmtOthers = conn.prepareStatement(sql2)) {
+                        stmtOthers.setObject(1, apiKeyId);
+                        stmtOthers.setObject(2, userId);
+                        stmtOthers.executeUpdate();
+                    }
+                }
+                conn.commit();
+                return Optional.of(apiKeyResponse);
+
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to update api key status", e);
+        }
     }
 
     public void deleteApiKey(UUID userId, UUID apiKeyId) {
@@ -205,6 +259,7 @@ public class UserRepository {
         return new ApiKeyResponse(
                 rs.getObject("id",  UUID.class),
                 rs.getString("provider"),
+                rs.getBoolean("is_active"),
                 rs.getTimestamp("created_at").toInstant()
         );
     }

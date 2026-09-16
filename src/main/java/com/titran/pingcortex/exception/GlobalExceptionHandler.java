@@ -41,6 +41,25 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("COURSE_NOT_FOUND", e.getMessage()));
     }
 
+    @ExceptionHandler(ApiKeyNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleApiKeyNotFound(ApiKeyNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("API_KEY_NOT_FOUND", e.getMessage()));
+    }
+
+    @ExceptionHandler(UnsupportedProviderException.class)
+    public ResponseEntity<ErrorResponse> handleUnsupportedProvider(UnsupportedProviderException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("UNSUPPORTED_PROVIDER", e.getMessage()));
+    }
+
+    @ExceptionHandler(AiProviderException.class)
+    public ResponseEntity<ErrorResponse> handleAiProviderError(AiProviderException e) {
+        log.warn("AI provider error", e);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(new ErrorResponse("AI_PROVIDER_ERROR", e.getMessage()));
+    }
+
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ErrorResponse> handleDataAccessException(DataAccessException e) {
         log.error("Data access error", e);

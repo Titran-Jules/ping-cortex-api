@@ -1,6 +1,7 @@
 package com.titran.pingcortex.service;
 
 import com.titran.pingcortex.dto.request.ApiKeyRequest;
+import com.titran.pingcortex.dto.request.ApiKeyStatus;
 import com.titran.pingcortex.dto.request.UserUpdate;
 import com.titran.pingcortex.dto.response.ApiKeyResponse;
 import com.titran.pingcortex.dto.response.UsageSummaryResponse;
@@ -43,6 +44,10 @@ public class UserService {
     public ApiKeyResponse createApiKey(UUID id, ApiKeyRequest apiKeyRequest) {
         String encryptedApiKey = encryptionService.encrypt(apiKeyRequest.apiKey());
         return userRepository.createApiKey(id, apiKeyRequest.provider(), encryptedApiKey);
+    }
+
+    public Optional<ApiKeyResponse> updateApiKeyStatus(UUID userId, UUID apiKeyId, ApiKeyStatus status) {
+        return userRepository.updateApiKeyStatus(userId, apiKeyId, status);
     }
 
     public void deleteApiKey(UUID id, UUID apiKeyId) {
