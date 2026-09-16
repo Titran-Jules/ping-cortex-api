@@ -23,6 +23,7 @@ CREATE TABLE user_api_key (
     user_id UUID NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
     provider VARCHAR(100) NOT NULL,
     encrypted_key VARCHAR(200) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

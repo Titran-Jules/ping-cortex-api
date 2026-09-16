@@ -698,6 +698,9 @@ components:
         provider:
           type: string
           example: anthropic
+        isActive:
+          type: boolean
+          example: true
         createdAt:
           type: string
           format: date-time
