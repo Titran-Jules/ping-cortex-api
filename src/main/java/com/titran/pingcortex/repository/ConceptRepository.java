@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -66,6 +67,46 @@ public class ConceptRepository {
             throw new DataAccessException("Failed to find all concepts", e);
         }
         return conceptResponses;
+    }
+
+    public Optional<ConceptResponse> confirmCoverage(UUID courseId, UUID conceptId) {
+        String sql = """
+            UPDATE concept
+            SET coverage_status = 'COVERED'
+            WHERE id = ? AND course_id = ?
+            RETURNING id, name, description, position, coverage_status
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, conceptId);
+            stmt.setObject(2, courseId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(conceptResponseRowMapper(rs)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to confirm coverage", e);
+        }
+    }
+
+    public Optional<ConceptResponse> revertCoverage(UUID courseId, UUID conceptId) {
+        String sql = """
+            UPDATE concept
+            SET coverage_status = 'NOT_COVERED'
+            WHERE id = ? AND course_id = ?
+            RETURNING id, name, description, position, coverage_status
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, conceptId);
+            stmt.setObject(2, courseId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(conceptResponseRowMapper(rs)) : Optional.empty();
+            }
+        }  catch (SQLException e) {
+            throw new DataAccessException("Failed to revert coverage", e);
+        }
     }
 
     private ConceptResponse conceptResponseRowMapper(ResultSet rs) throws SQLException {
