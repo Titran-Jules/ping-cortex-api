@@ -151,6 +151,27 @@ public class CourseRepository {
         }
     }
 
+    public boolean updateAnalysisStatus(UUID courseId, AnalysisStatus status) {
+        String sql = """
+            UPDATE course
+            SET analysis_status = ?
+            WHERE id = ?
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setString(1, status.name());
+            stmt.setObject(1, courseId);
+            int result = stmt.executeUpdate();
+            if (result != 1) {
+                return false;
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to update status course", e);
+        }
+        return true;
+    }
+
     private CourseResponse courseRowMapper(ResultSet rs) throws SQLException {
         return new CourseResponse(
                 UUID.fromString(rs.getString("id")),

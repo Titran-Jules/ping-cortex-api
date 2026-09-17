@@ -202,9 +202,7 @@ public class UserRepository {
                 return rs.next() ? Optional.of(new UserApiKey(
                         rs.getObject("id", UUID.class),
                         rs.getString("provider"),
-                        rs.getString("encrypted_key"),
-                        rs.getBoolean("is_active"),
-                        rs.getTimestamp("created_at").toInstant()
+                        rs.getString("encrypted_key")
                 )) : Optional.empty();
             }
         } catch (SQLException e) {
