@@ -2,7 +2,6 @@ package com.titran.pingcortex.service;
 
 import com.titran.pingcortex.ai.AiClient;
 import com.titran.pingcortex.ai.AiClientResolver;
-import com.titran.pingcortex.ai.AiResults;
 import com.titran.pingcortex.dto.response.CourseMaterialResponse;
 import com.titran.pingcortex.dto.response.CourseResponse;
 import com.titran.pingcortex.exception.CourseNotFoundException;
