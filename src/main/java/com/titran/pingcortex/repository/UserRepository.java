@@ -7,6 +7,7 @@ import com.titran.pingcortex.dto.response.UserResponse;
 import com.titran.pingcortex.exception.DataAccessException;
 import com.titran.pingcortex.model.AiProvider;
 import com.titran.pingcortex.model.User;
+import com.titran.pingcortex.model.UserApiKey;
 import com.titran.pingcortex.util.ManagedConnection;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -185,6 +186,28 @@ public class UserRepository {
             throw new DataAccessException("Failed to create api key", e);
         }
         return apiKeyResponse;
+    }
+
+    public Optional<UserApiKey> findActiveApiKey(UUID userId) {
+        String sql = """
+            SELECT id, provider, encrypted_key, is_active, created_at
+            FROM user_api_key
+            WHERE  user_id = ? AND is_active = TRUE
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(new UserApiKey(
+                        rs.getObject("id", UUID.class),
+                        rs.getString("provider"),
+                        rs.getString("encrypted_key")
+                )) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failde to find active api key", e);
+        }
     }
 
     public Optional<ApiKeyResponse> updateApiKeyStatus(UUID userId, UUID apiKeyId, ApiKeyStatus status) {

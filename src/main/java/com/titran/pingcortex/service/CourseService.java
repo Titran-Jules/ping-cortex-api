@@ -7,6 +7,7 @@ import com.titran.pingcortex.dto.response.CourseResponse;
 import com.titran.pingcortex.repository.CourseRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CourseService {
     private final CourseRepository courseRepository;
+    private final CourseAnalyzeService courseAnalyzeService;
 
     public List<CourseResponse> findAllCourses(UUID userId, Boolean isActive) {
         return courseRepository.findAll(userId, isActive);
@@ -25,8 +27,11 @@ public class CourseService {
         return courseRepository.findById(userId, courseId);
     }
 
+    @Transactional
     public CourseResponse createCourse(UUID userId, CourseRequest courseRequest) {
-        return courseRepository.createCourse(userId, courseRequest);
+        var createdCourse = courseRepository.createCourse(userId, courseRequest);
+        courseAnalyzeService.analyzeCourse(userId, createdCourse.id());
+        return createdCourse;
     }
 
     public Optional<CourseResponse> updateCourse(UUID userId, UUID courseId, CourseUpdate  courseUpdate) {
