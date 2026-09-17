@@ -33,9 +33,10 @@ public class ConceptRepository {
         ) {
             UUID conceptId = UUID.randomUUID();
             stmt.setObject(1, conceptId);
-            stmt.setString(2, name);
-            stmt.setString(3, description);
-            stmt.setInt(4, position);
+            stmt.setObject(2, courseId);
+            stmt.setString(3, name);
+            stmt.setString(4, description);
+            stmt.setInt(5, position);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     concept = conceptResponseRowMapper(rs);
@@ -47,10 +48,12 @@ public class ConceptRepository {
         return concept;
     }
 
-    public List<ConceptResponse> findAllByCourseId(UUID courseId) {
+    public List<ConceptResponse> findAllByCourseId(UUID userId, UUID courseId) {
         String sql = """
-            SELECT id, name, description, position, coverage_status
-            FROM concept WHERE course_id = ?
+            SELECT c.id, c.name, c.description, c.position, c.coverage_status
+            FROM concept c
+            JOIN course co ON c.course_id = co.id
+            WHERE c.course_id = ? AND co.user_id = ?
             ORDER BY position
         """;
         List<ConceptResponse> conceptResponses = new ArrayList<>();
@@ -58,6 +61,7 @@ public class ConceptRepository {
             PreparedStatement stmt = connection.get().prepareStatement(sql)
         ) {
             stmt.setObject(1, courseId);
+            stmt.setObject(2, userId);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     conceptResponses.add(conceptResponseRowMapper(rs));
@@ -69,43 +73,40 @@ public class ConceptRepository {
         return conceptResponses;
     }
 
-    public Optional<ConceptResponse> confirmCoverage(UUID courseId, UUID conceptId) {
-        String sql = """
-            UPDATE concept
-            SET coverage_status = 'COVERED'
-            WHERE id = ? AND course_id = ?
-            RETURNING id, name, description, position, coverage_status
-        """;
-        try (ManagedConnection connection = ManagedConnection.open(dataSource);
-            PreparedStatement stmt = connection.get().prepareStatement(sql)
-        ) {
-            stmt.setObject(1, conceptId);
-            stmt.setObject(2, courseId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next() ? Optional.of(conceptResponseRowMapper(rs)) : Optional.empty();
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to confirm coverage", e);
-        }
+    public Optional<ConceptResponse> confirmCoverage(UUID userId, UUID courseId, UUID conceptId) {
+        return updateCoverageStatus(userId, courseId, conceptId, "COVERED");
     }
 
-    public Optional<ConceptResponse> revertCoverage(UUID courseId, UUID conceptId) {
+    public Optional<ConceptResponse> revertCoverage(UUID userId, UUID courseId, UUID conceptId) {
+        return updateCoverageStatus(userId, courseId, conceptId, "NOT_COVERED");
+    }
+
+    private Optional<ConceptResponse> updateCoverageStatus(UUID userId, UUID courseId, UUID conceptId, String newStatus) {
         String sql = """
-            UPDATE concept
-            SET coverage_status = 'NOT_COVERED'
-            WHERE id = ? AND course_id = ?
-            RETURNING id, name, description, position, coverage_status
+            UPDATE concept c
+            SET coverage_status = ?::coverage_status_list
+            FROM course co
+            WHERE c.course_id = co.id
+              AND c.id = ?
+              AND c.course_id = ?
+              AND co.user_id = ?
+            RETURNING c.id, c.name, c.description, c.position, c.coverage_status
         """;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
-            PreparedStatement stmt = connection.get().prepareStatement(sql)
+             PreparedStatement stmt = connection.get().prepareStatement(sql)
         ) {
-            stmt.setObject(1, conceptId);
-            stmt.setObject(2, courseId);
+            stmt.setString(1, newStatus);
+            stmt.setObject(2, conceptId);
+            stmt.setObject(3, courseId);
+            stmt.setObject(4, userId);
             try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next() ? Optional.of(conceptResponseRowMapper(rs)) : Optional.empty();
+                if (rs.next()) {
+                    return Optional.of(conceptResponseRowMapper(rs));
+                }
+                return Optional.empty();
             }
-        }  catch (SQLException e) {
-            throw new DataAccessException("Failed to revert coverage", e);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to update concept coverage status", e);
         }
     }
 

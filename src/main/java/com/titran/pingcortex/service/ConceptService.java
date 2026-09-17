@@ -14,17 +14,17 @@ import java.util.UUID;
 public class ConceptService {
     private final ConceptRepository conceptRepository;
 
-    public List<ConceptResponse> findAll(UUID courseId) {
-        return conceptRepository.findAllByCourseId(courseId);
+    public List<ConceptResponse> findAll(UUID userId, UUID courseId) {
+        return conceptRepository.findAllByCourseId(userId, courseId);
     }
 
-    public ConceptResponse confirmConceptCoverage(UUID courseId, UUID conceptId) {
-        return conceptRepository.confirmCoverage(courseId, conceptId)
+    public ConceptResponse confirmConceptCoverage(UUID userId, UUID courseId, UUID conceptId) {
+        return conceptRepository.confirmCoverage(userId, courseId, conceptId)
                 .orElseThrow(ConceptNotFoundException::new);
     }
 
-    public ConceptResponse revertConceptCoverage(UUID courseId, UUID conceptId) {
-        return conceptRepository.revertCoverage(courseId, conceptId)
+    public ConceptResponse revertConceptCoverage(UUID userId, UUID courseId, UUID conceptId) {
+        return conceptRepository.revertCoverage(userId, courseId, conceptId)
                 .orElseThrow(ConceptNotFoundException::new);
     }
 }
