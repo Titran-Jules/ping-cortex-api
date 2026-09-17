@@ -47,6 +47,12 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("API_KEY_NOT_FOUND", e.getMessage()));
     }
 
+    @ExceptionHandler(NoActiveKeyException.class)
+    public ResponseEntity<ErrorResponse> handleNoActiveKey(NoActiveKeyException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("NO_ACTIVE_KEY", e.getMessage()));
+    }
+
     @ExceptionHandler(UnsupportedProviderException.class)
     public ResponseEntity<ErrorResponse> handleUnsupportedProvider(UnsupportedProviderException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
