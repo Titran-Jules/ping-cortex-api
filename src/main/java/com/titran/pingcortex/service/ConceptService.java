@@ -1,7 +1,9 @@
 package com.titran.pingcortex.service;
 
+import com.titran.pingcortex.dto.response.ConceptMasteryResponse;
 import com.titran.pingcortex.dto.response.ConceptResponse;
 import com.titran.pingcortex.exception.ConceptNotFoundException;
+import com.titran.pingcortex.exception.MasteryThresholdException;
 import com.titran.pingcortex.repository.ConceptRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,5 +28,17 @@ public class ConceptService {
     public ConceptResponse revertConceptCoverage(UUID userId, UUID courseId, UUID conceptId) {
         return conceptRepository.revertCoverage(userId, courseId, conceptId)
                 .orElseThrow(ConceptNotFoundException::new);
+    }
+
+    public ConceptResponse advanceConceptCoverage(UUID userId, UUID courseId, UUID conceptId) {
+        ConceptMasteryResponse conceptMastery = conceptRepository.findConceptMastery(userId, conceptId)
+                .orElseThrow(ConceptNotFoundException::new);
+
+        if (conceptMastery.masteryLevel() >= 80) {
+            return conceptRepository.advanceCoverage(userId, courseId, conceptId)
+                    .orElseThrow(ConceptNotFoundException::new);
+        } else {
+            throw new MasteryThresholdException();
+        }
     }
 }

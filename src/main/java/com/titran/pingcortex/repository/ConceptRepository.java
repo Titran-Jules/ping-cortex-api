@@ -1,5 +1,6 @@
 package com.titran.pingcortex.repository;
 
+import com.titran.pingcortex.dto.response.ConceptMasteryResponse;
 import com.titran.pingcortex.dto.response.ConceptResponse;
 import com.titran.pingcortex.exception.DataAccessException;
 import com.titran.pingcortex.model.ConceptStatus;
@@ -81,6 +82,10 @@ public class ConceptRepository {
         return updateCoverageStatus(userId, courseId, conceptId, "NOT_COVERED");
     }
 
+    public Optional<ConceptResponse> advanceCoverage(UUID userId, UUID courseId, UUID conceptId) {
+        return updateCoverageStatus(userId, courseId, conceptId, "ANTICIPATED_COVERED");
+    }
+
     private Optional<ConceptResponse> updateCoverageStatus(UUID userId, UUID courseId, UUID conceptId, String newStatus) {
         String sql = """
             UPDATE concept c
@@ -110,6 +115,25 @@ public class ConceptRepository {
         }
     }
 
+    public Optional<ConceptMasteryResponse> findConceptMastery(UUID userId, UUID conceptId) {
+        String sql = """
+            SELECT id, mastery_level, last_reviewed_at
+            FROM user_concept_mastery
+            WHERE user_id = ? AND concept_id = ?
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, userId);
+            stmt.setObject(2, conceptId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(conceptMasteryResponseRowMapper(rs)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find concept mastery", e);
+        }
+    }
+
     private ConceptResponse conceptResponseRowMapper(ResultSet rs) throws SQLException {
         return new ConceptResponse(
                 rs.getObject("id", UUID.class),
@@ -117,6 +141,14 @@ public class ConceptRepository {
                 rs.getString("description"),
                 rs.getInt("position"),
                 ConceptStatus.valueOf(rs.getString("coverage_status"))
+        );
+    }
+
+    private ConceptMasteryResponse conceptMasteryResponseRowMapper(ResultSet rs) throws SQLException {
+        return new ConceptMasteryResponse(
+                rs.getObject("id", UUID.class),
+                rs.getInt("mastery_level"),
+                rs.getTimestamp("last_reviewed_at").toInstant()
         );
     }
 }

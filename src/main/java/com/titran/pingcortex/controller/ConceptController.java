@@ -36,4 +36,10 @@ public class ConceptController {
         UUID userId = CurrentUser.id(request);
         return ResponseEntity.ok(conceptService.revertConceptCoverage(userId, courseId, conceptId));
     }
+
+    @PostMapping("/courses/{courseId}/concepts/{conceptId}/advance")
+    public ResponseEntity<ConceptResponse> advanceConcept(@PathVariable UUID courseId, @PathVariable UUID conceptId, HttpServletRequest request) {
+        UUID userId = CurrentUser.id(request);
+        return ResponseEntity.ok(conceptService.advanceConceptCoverage(userId, courseId, conceptId));
+    }
 }
