@@ -41,6 +41,18 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("COURSE_NOT_FOUND", e.getMessage()));
     }
 
+    @ExceptionHandler(ConceptNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleConceptNotFound(ConceptNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("CONCEPT_NOT_FOUND", e.getMessage()));
+    }
+
+    @ExceptionHandler(MasteryThresholdException.class)
+    public ResponseEntity<ErrorResponse> handleMasteryThreshold(MasteryThresholdException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse("MASTERY_NOT_REACHED", e.getMessage()));
+    }
+
     @ExceptionHandler(ApiKeyNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleApiKeyNotFound(ApiKeyNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
