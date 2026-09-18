@@ -41,4 +41,9 @@ public class ConceptService {
             throw new MasteryThresholdException();
         }
     }
+
+    public ConceptMasteryResponse findConceptMastery(UUID userId, UUID conceptId) {
+        return conceptRepository.findConceptMastery(userId, conceptId)
+                .orElseThrow(ConceptNotFoundException::new);
+    }
 }

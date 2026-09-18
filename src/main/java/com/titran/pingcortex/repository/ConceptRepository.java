@@ -117,7 +117,7 @@ public class ConceptRepository {
 
     public Optional<ConceptMasteryResponse> findConceptMastery(UUID userId, UUID conceptId) {
         String sql = """
-            SELECT id, mastery_level, last_reviewed_at
+            SELECT concept_id, mastery_level, last_reviewed_at
             FROM user_concept_mastery
             WHERE user_id = ? AND concept_id = ?
         """;
@@ -146,7 +146,7 @@ public class ConceptRepository {
 
     private ConceptMasteryResponse conceptMasteryResponseRowMapper(ResultSet rs) throws SQLException {
         return new ConceptMasteryResponse(
-                rs.getObject("id", UUID.class),
+                rs.getObject("concept_id", UUID.class),
                 rs.getInt("mastery_level"),
                 rs.getTimestamp("last_reviewed_at").toInstant()
         );

@@ -1,5 +1,6 @@
 package com.titran.pingcortex.controller;
 
+import com.titran.pingcortex.dto.response.ConceptMasteryResponse;
 import com.titran.pingcortex.dto.response.ConceptResponse;
 import com.titran.pingcortex.security.CurrentUser;
 import com.titran.pingcortex.service.ConceptService;
@@ -41,5 +42,11 @@ public class ConceptController {
     public ResponseEntity<ConceptResponse> advanceConcept(@PathVariable UUID courseId, @PathVariable UUID conceptId, HttpServletRequest request) {
         UUID userId = CurrentUser.id(request);
         return ResponseEntity.ok(conceptService.advanceConceptCoverage(userId, courseId, conceptId));
+    }
+
+    @GetMapping("/concepts/{conceptId}/mastery")
+    public ResponseEntity<ConceptMasteryResponse> findConceptMastery(@PathVariable UUID conceptId, HttpServletRequest request) {
+        UUID userId = CurrentUser.id(request);
+        return ResponseEntity.ok(conceptService.findConceptMastery(userId, conceptId));
     }
 }
