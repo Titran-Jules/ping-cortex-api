@@ -134,7 +134,7 @@ public class ConceptRepository {
         }
     }
 
-    public Optional<ConceptResponse> updateSuggestedCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId) {
+    public boolean updateSuggestedCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId) {
         String sql = """
             UPDATE concept c
             SET suggested_coverage = TRUE,
@@ -154,12 +154,44 @@ public class ConceptRepository {
             stmt.setObject(2, conceptId);
             stmt.setObject(3, courseId);
             stmt.setObject(4, userId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next() ? Optional.of(conceptResponseRowMapper(rs)) : Optional.empty();
+            int result = stmt.executeUpdate();
+            if (result != 1) {
+                return false;
             }
         } catch (SQLException e) {
             throw new DataAccessException("Failed to update concept suggested_coverage", e);
         }
+        return true;
+    }
+
+    public boolean declineSuggestedCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId) {
+        String sql = """
+            UPDATE concept c
+            SET suggested_coverage = FALSE,
+                suggested_from_material_id = ?
+            FROM course co
+            WHERE c.course_id = co.id
+                AND c.id = ?
+                AND co.course_id = ?
+                AND co.user_id = ?
+                AND c.coverage_status != 'COVERAGE'
+            RETURNING c.id, c.name, c.description, c.position, c.coverage_status 
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+             PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, materialId);
+            stmt.setObject(2, conceptId);
+            stmt.setObject(3, courseId);
+            stmt.setObject(4, userId);
+            int result = stmt.executeUpdate();
+            if (result != 1) {
+                return false;
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to decline concept suggested_coverage", e);
+        }
+        return true;
     }
 
     public List<ConceptResponse> findAllSuggestedCoverageConcept(UUID userId, UUID courseId) {
