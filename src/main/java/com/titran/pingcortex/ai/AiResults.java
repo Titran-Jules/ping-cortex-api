@@ -3,11 +3,17 @@ package com.titran.pingcortex.ai;
 import com.titran.pingcortex.model.Difficulty;
 
 import java.util.List;
+import java.util.UUID;
 
 public final class AiResults {
     private AiResults() {}
 
     public record ConceptSuggestion(String name, String description) {}
+
+    public record ConceptCoverageSuggestion(UUID conceptId, String confidence) {}
+
+    public record ConceptSummary(UUID id, String name, String description) {
+    }
 
     public record QuizQuestionSuggestion(
             String questionText,

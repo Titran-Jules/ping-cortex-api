@@ -44,6 +44,28 @@ public abstract class AbstractAiClient implements AiClient {
     }
 
     @Override
+    public List<ConceptCoverageSuggestion> analyzeCoverage(String apiKey, List<ConceptSummary> concepts, String materialContent) {
+        String systemPrompt = """
+            Tu es un assistant pedagogique.
+            Tu as élaboré ces CONCEPTS pour un cours.
+            Tu va ensuite analyser ces concepts à partir du MATERIAL_CONTENT et proposer les concepts qui pourront être mis à COVERED
+            Réponds UNIQUEMENT en JSON valide, sans aucun texte devant ou apres, au format exact :
+            [{"conceptId": "...", "confidence": "HIGH/MEDIUM/LOW"}]
+        """;
+
+        StringBuilder userPrompt = new StringBuilder();
+        userPrompt.append("CONCEPTS : ").append("\n");
+        for (ConceptSummary concept : concepts) {
+            userPrompt.append("id : ").append(concept.id()).append("; name: ").append(concept.name()).append("; description: ").append(concept.description()).append(";\n");
+        }
+        userPrompt.append("\n");
+        userPrompt.append("MATERIAL CONTENT : ").append("\n");
+        userPrompt.append(materialContent).append("\n");
+        String rawResponse = callProviderApi(apiKey, systemPrompt, List.of(new ChatTurn("user", userPrompt.toString())), true);
+        return parseJson(rawResponse, new TypeReference<List<ConceptCoverageSuggestion>>() {});
+    }
+
+    @Override
     public QuizQuestionSuggestion generateQuiz(String apiKey, String conceptName, String conceptDescription, Difficulty difficulty) {
         String systemPrompt = """
             Tu generes une question a choix multiples de difficulte %s sur le
