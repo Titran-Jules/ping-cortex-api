@@ -26,7 +26,7 @@ public class ConceptRepository {
         String sql = """
             INSERT INTO concept (id, course_id, name, description, position)
             VALUES (?, ?, ?, ?, ?)
-            RETURNING id, name, description, position, coverage_status
+            RETURNING id, name, description, position, coverage_status, suggested_coverage
         """;
         ConceptResponse concept = null;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
@@ -51,7 +51,7 @@ public class ConceptRepository {
 
     public List<ConceptResponse> findAllByCourseId(UUID userId, UUID courseId) {
         String sql = """
-            SELECT c.id, c.name, c.description, c.position, c.coverage_status
+            SELECT c.id, c.name, c.description, c.position, c.coverage_status, c.suggested_coverage
             FROM concept c
             JOIN course co ON c.course_id = co.id
             WHERE c.course_id = ? AND co.user_id = ?
@@ -76,7 +76,7 @@ public class ConceptRepository {
 
     public List<ConceptResponse> findAllNotCoveredByCourseId(UUID userId, UUID courseId) {
         String sql = """
-            SELECT c.id, c.name, c.description, c.position ,c.coverage_status
+            SELECT c.id, c.name, c.description, c.position ,c.coverage_status, c.suggested_coverage
             FROM concept c
             JOIN course co ON c.course_id = co.id
             WHERE c.course_id = ? AND co.user_id = ? AND c.coverage_status != 'COVERED'
@@ -120,7 +120,7 @@ public class ConceptRepository {
               AND c.id = ?
               AND c.course_id = ?
               AND co.user_id = ?
-            RETURNING c.id, c.name, c.description, c.position, c.coverage_status
+            RETURNING c.id, c.name, c.description, c.position, c.coverage_status, c.suggested_coverage
         """;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
              PreparedStatement stmt = connection.get().prepareStatement(sql)
@@ -169,8 +169,8 @@ public class ConceptRepository {
                 AND c.id = ?
                 AND co.course_id = ?
                 AND co.user_id = ?
-                AND c.coverage_status != 'COVERAGE'
-            RETURNING c.id, c.name, c.description, c.position, c.coverage_status 
+                AND c.coverage_status != 'COVERED'
+            RETURNING c.id, c.name, c.description, c.position, c.coverage_status
         """;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
             PreparedStatement stmt = connection.get().prepareStatement(sql)
@@ -196,11 +196,11 @@ public class ConceptRepository {
 
     public List<ConceptResponse> findAllSuggestedCoverageConcept(UUID userId, UUID courseId) {
         String sql = """
-            SELECT  c.id, c.name, c.description, c.position, c.coverage_status
+            SELECT  c.id, c.name, c.description, c.position, c.coverage_status, c.suggested_coverage
             FROM concept c
             JOIN course co
             ON c.course_id = co.id
-            WHERE c.course_id = ? AND co.user_id = ? AND c.suggested_coverage = TRUE AND c.coverage_status != 'COVERAGE'
+            WHERE c.course_id = ? AND co.user_id = ? AND c.suggested_coverage = TRUE AND c.coverage_status != 'COVERED'
         """;
         List<ConceptResponse> conceptResponses = new ArrayList<>();
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
@@ -225,7 +225,8 @@ public class ConceptRepository {
                 rs.getString("name"),
                 rs.getString("description"),
                 rs.getInt("position"),
-                ConceptStatus.valueOf(rs.getString("coverage_status"))
+                ConceptStatus.valueOf(rs.getString("coverage_status")),
+                rs.getBoolean("suggested_coverage")
         );
     }
 

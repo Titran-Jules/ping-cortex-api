@@ -840,6 +840,9 @@ components:
           type: string
           enum: [NOT_COVERED, ANTICIPATED_COVERED, COVERED]
           example: NOT_COVERED
+        suggestedCoverage:
+          type: boolean
+          example: false
     MasteryResponse:
       type: object
       properties:
