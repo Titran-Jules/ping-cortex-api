@@ -74,6 +74,31 @@ public class ConceptRepository {
         return conceptResponses;
     }
 
+    public List<ConceptResponse> findAllNotCoveredByCourseId(UUID userId, UUID courseId) {
+        String sql = """
+            SELECT c.id, c.name, c.description, c.position ,c.coverage_status
+            FROM concept c
+            JOIN course co ON c.course_id = co.id
+            WHERE c.course_id = ? AND co.user_id = ? AND c.coverage_status != 'COVERED'
+            ORDER BY position
+        """;
+        List<ConceptResponse> conceptResponses = new ArrayList<>();
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, courseId);
+            stmt.setObject(2, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    conceptResponses.add(conceptResponseRowMapper(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find all concepts", e);
+        }
+        return conceptResponses;
+    }
+
     public Optional<ConceptResponse> confirmCoverage(UUID userId, UUID courseId, UUID conceptId) {
         return updateCoverageStatus(userId, courseId, conceptId, "COVERED");
     }

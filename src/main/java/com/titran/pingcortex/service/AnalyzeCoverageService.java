@@ -34,7 +34,7 @@ public class AnalyzeCoverageService {
     public void analyzeCoverage(UUID userId, UUID courseId, UUID materialId) {
         var courseMaterial = courseMaterialRepository.findById(materialId)
                 .orElseThrow(CourseMaterialNotFoundException::new);
-        List<ConceptResponse> concepts = conceptRepository.findAllByCourseId(userId, courseId);
+        List<ConceptResponse> concepts = conceptRepository.findAllNotCoveredByCourseId(userId, courseId);
         UserApiKey activeKey = userRepository.findActiveApiKey(userId)
                 .orElseThrow(UserNotFoundException::new);
         String decryptedKey = encryptionService.decrypt(activeKey.encryptedKey());
