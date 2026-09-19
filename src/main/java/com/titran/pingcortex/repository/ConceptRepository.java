@@ -26,7 +26,7 @@ public class ConceptRepository {
         String sql = """
             INSERT INTO concept (id, course_id, name, description, position)
             VALUES (?, ?, ?, ?, ?)
-            RETURNING id, name, description, position, coverage_status
+            RETURNING id, name, description, position, coverage_status, suggested_coverage
         """;
         ConceptResponse concept = null;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
@@ -51,10 +51,35 @@ public class ConceptRepository {
 
     public List<ConceptResponse> findAllByCourseId(UUID userId, UUID courseId) {
         String sql = """
-            SELECT c.id, c.name, c.description, c.position, c.coverage_status
+            SELECT c.id, c.name, c.description, c.position, c.coverage_status, c.suggested_coverage
             FROM concept c
             JOIN course co ON c.course_id = co.id
             WHERE c.course_id = ? AND co.user_id = ?
+            ORDER BY position
+        """;
+        List<ConceptResponse> conceptResponses = new ArrayList<>();
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, courseId);
+            stmt.setObject(2, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    conceptResponses.add(conceptResponseRowMapper(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find all concepts", e);
+        }
+        return conceptResponses;
+    }
+
+    public List<ConceptResponse> findAllNotCoveredByCourseId(UUID userId, UUID courseId) {
+        String sql = """
+            SELECT c.id, c.name, c.description, c.position ,c.coverage_status, c.suggested_coverage
+            FROM concept c
+            JOIN course co ON c.course_id = co.id
+            WHERE c.course_id = ? AND co.user_id = ? AND c.coverage_status != 'COVERED'
             ORDER BY position
         """;
         List<ConceptResponse> conceptResponses = new ArrayList<>();
@@ -95,7 +120,7 @@ public class ConceptRepository {
               AND c.id = ?
               AND c.course_id = ?
               AND co.user_id = ?
-            RETURNING c.id, c.name, c.description, c.position, c.coverage_status
+            RETURNING c.id, c.name, c.description, c.position, c.coverage_status, c.suggested_coverage
         """;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
              PreparedStatement stmt = connection.get().prepareStatement(sql)
@@ -134,13 +159,74 @@ public class ConceptRepository {
         }
     }
 
+    private void updateSuggestedCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId, boolean isAccepted) {
+        String sql = """
+            UPDATE concept c
+            SET suggested_coverage = ?,
+                suggested_from_material_id = ?
+            FROM course co
+            WHERE c.course_id = co.id
+                AND c.id = ?
+                AND co.course_id = ?
+                AND co.user_id = ?
+                AND c.coverage_status != 'COVERED'
+            RETURNING c.id, c.name, c.description, c.position, c.coverage_status
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, isAccepted);
+            stmt.setObject(2, materialId);
+            stmt.setObject(3, conceptId);
+            stmt.setObject(4, courseId);
+            stmt.setObject(5, userId);
+            int result = stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to update concept suggested_coverage", e);
+        }
+    }
+
+    public void addSuggestionCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId) {
+        updateSuggestedCoverage(userId, courseId, conceptId, materialId, true);
+    }
+
+    public void rejectSuggestionCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId) {
+        updateSuggestedCoverage(userId, courseId, conceptId, materialId, false);
+    }
+
+    public List<ConceptResponse> findAllSuggestedCoverageConcept(UUID userId, UUID courseId) {
+        String sql = """
+            SELECT  c.id, c.name, c.description, c.position, c.coverage_status, c.suggested_coverage
+            FROM concept c
+            JOIN course co
+            ON c.course_id = co.id
+            WHERE c.course_id = ? AND co.user_id = ? AND c.suggested_coverage = TRUE AND c.coverage_status != 'COVERED'
+        """;
+        List<ConceptResponse> conceptResponses = new ArrayList<>();
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, courseId);
+            stmt.setObject(2, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
+                    conceptResponses.add(conceptResponseRowMapper(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find concept suggested_coverage", e);
+        }
+        return conceptResponses;
+    }
+
     private ConceptResponse conceptResponseRowMapper(ResultSet rs) throws SQLException {
         return new ConceptResponse(
                 rs.getObject("id", UUID.class),
                 rs.getString("name"),
                 rs.getString("description"),
                 rs.getInt("position"),
-                ConceptStatus.valueOf(rs.getString("coverage_status"))
+                ConceptStatus.valueOf(rs.getString("coverage_status")),
+                rs.getBoolean("suggested_coverage")
         );
     }
 

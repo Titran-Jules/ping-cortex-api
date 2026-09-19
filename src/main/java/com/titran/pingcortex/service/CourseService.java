@@ -5,6 +5,7 @@ import com.titran.pingcortex.dto.request.CourseUpdate;
 import com.titran.pingcortex.dto.request.CourseUpdateActive;
 import com.titran.pingcortex.dto.response.CourseResponse;
 import com.titran.pingcortex.repository.CourseRepository;
+import com.titran.pingcortex.util.TransactionUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +31,7 @@ public class CourseService {
     @Transactional
     public CourseResponse createCourse(UUID userId, CourseRequest courseRequest) {
         var createdCourse = courseRepository.createCourse(userId, courseRequest);
-        courseAnalyzeService.analyzeCourse(userId, createdCourse.id());
+        TransactionUtils.afterCommit(() -> courseAnalyzeService.analyzeCourse(userId, createdCourse.id()));
         return createdCourse;
     }
 

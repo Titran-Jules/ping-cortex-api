@@ -4,6 +4,7 @@ import com.titran.pingcortex.ai.AiResults.*;
 import com.titran.pingcortex.model.Difficulty;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface AiClient {
     List<ConceptSuggestion> analyzeCourse(
@@ -11,6 +12,12 @@ public interface AiClient {
             String courseTitle,
             String courseDescription,
             List<String> materialContents
+    );
+
+    List<ConceptCoverageSuggestion> analyzeCoverage(
+            String apiKey,
+            List<ConceptSummary> concepts,
+            String materialContent
     );
 
     QuizQuestionSuggestion generateQuiz(
