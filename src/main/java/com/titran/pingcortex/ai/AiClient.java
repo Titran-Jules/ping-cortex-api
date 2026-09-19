@@ -27,6 +27,14 @@ public interface AiClient {
             Difficulty difficulty
     );
 
+    List<QuizQuestionSuggestion> generateQuizBatch(
+            String apiKey,
+            String conceptName,
+            String conceptDescription,
+            Difficulty difficulty,
+            int count
+    );
+
     FeynmanEvaluationResult evaluateFeynman(
             String apiKey,
             String conceptName,
