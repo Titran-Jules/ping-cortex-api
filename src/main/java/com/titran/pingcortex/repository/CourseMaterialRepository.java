@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -66,6 +67,24 @@ public class CourseMaterialRepository {
             throw new DataAccessException("Failed to find course materials", e);
         }
         return courseMaterials;
+    }
+
+    public Optional<CourseMaterialResponse> findById(UUID materialId) {
+        String sql = """
+            SELECT id, content, type, created_at
+            FROM course_material
+            WHERE id = ?;
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, materialId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(courseMaterialRowMapper(rs)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find Material", e);
+        }
     }
 
     private CourseMaterialResponse courseMaterialRowMapper(ResultSet rs) throws SQLException {

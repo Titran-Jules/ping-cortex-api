@@ -134,7 +134,7 @@ public class ConceptRepository {
         }
     }
 
-    private boolean updateSuggestedCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId, boolean isAccepted) {
+    private void updateSuggestedCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId, boolean isAccepted) {
         String sql = """
             UPDATE concept c
             SET suggested_coverage = ?,
@@ -156,21 +156,17 @@ public class ConceptRepository {
             stmt.setObject(4, courseId);
             stmt.setObject(5, userId);
             int result = stmt.executeUpdate();
-            if (result != 1) {
-                return false;
-            }
         } catch (SQLException e) {
             throw new DataAccessException("Failed to update concept suggested_coverage", e);
         }
-        return true;
     }
 
-    public boolean acceptSuggestionCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId) {
-        return updateSuggestedCoverage(userId, courseId, conceptId, materialId, true);
+    public void addSuggestionCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId) {
+        updateSuggestedCoverage(userId, courseId, conceptId, materialId, true);
     }
 
-    public boolean rejectSuggestionCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId) {
-        return updateSuggestedCoverage(userId, courseId, conceptId, materialId, false);
+    public void rejectSuggestionCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId) {
+        updateSuggestedCoverage(userId, courseId, conceptId, materialId, false);
     }
 
     public List<ConceptResponse> findAllSuggestedCoverageConcept(UUID userId, UUID courseId) {

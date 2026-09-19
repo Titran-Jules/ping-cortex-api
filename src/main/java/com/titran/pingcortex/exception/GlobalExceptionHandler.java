@@ -1,7 +1,9 @@
 package com.titran.pingcortex.exception;
 
+import com.titran.pingcortex.dto.response.CourseMaterialResponse;
 import com.titran.pingcortex.dto.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.flywaydb.core.api.callback.Error;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -45,6 +47,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleConceptNotFound(ConceptNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse("CONCEPT_NOT_FOUND", e.getMessage()));
+    }
+
+    @ExceptionHandler(CourseMaterialNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCourseMaterialNotFound(CourseMaterialNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("COURSE_MATERIAL_NOT_FOUND", e.getMessage()));
     }
 
     @ExceptionHandler(MasteryThresholdException.class)
