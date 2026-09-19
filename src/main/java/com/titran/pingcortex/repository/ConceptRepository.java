@@ -134,6 +134,59 @@ public class ConceptRepository {
         }
     }
 
+    public Optional<ConceptResponse> updateSuggestedCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId) {
+        String sql = """
+            UPDATE concept c
+            SET suggested_coverage = TRUE,
+                suggested_from_material_id = ?
+            FROM course co
+            WHERE c.course_id = co.id
+                AND c.id = ?
+                AND co.course_id = ?
+                AND co.user_id = ?
+                AND c.coverage_status != 'COVERAGE'
+            RETURNING c.id, c.name, c.description, c.position, c.coverage_status 
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, materialId);
+            stmt.setObject(2, conceptId);
+            stmt.setObject(3, courseId);
+            stmt.setObject(4, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(conceptResponseRowMapper(rs)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to update concept suggested_coverage", e);
+        }
+    }
+
+    public List<ConceptResponse> findAllSuggestedCoverageConcept(UUID userId, UUID courseId) {
+        String sql = """
+            SELECT  c.id, c.name, c.description, c.position, c.coverage_status
+            FROM concept c
+            JOIN course co
+            ON c.course_id = co.id
+            WHERE c.course_id = ? AND co.user_id = ? AND c.suggested_coverage = TRUE AND c.coverage_status != 'COVERAGE'
+        """;
+        List<ConceptResponse> conceptResponses = new ArrayList<>();
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, courseId);
+            stmt.setObject(2, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
+                    conceptResponses.add(conceptResponseRowMapper(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find concept suggested_coverage", e);
+        }
+        return conceptResponses;
+    }
+
     private ConceptResponse conceptResponseRowMapper(ResultSet rs) throws SQLException {
         return new ConceptResponse(
                 rs.getObject("id", UUID.class),
