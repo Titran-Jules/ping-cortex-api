@@ -15,6 +15,7 @@ import java.util.UUID;
 public class CourseMaterialService {
     private final CourseMaterialRepository courseMaterialRepository;
     private final CourseService courseService;
+    private final AnalyzeCoverageService analyzeCoverageService;
 
     public List<CourseMaterialResponse> findAll(UUID userId, UUID courseId) {
         courseService.findCourseById(userId, courseId).orElseThrow(CourseNotFoundException::new);
@@ -23,6 +24,8 @@ public class CourseMaterialService {
 
     public CourseMaterialResponse create(UUID userId, UUID courseId, CourseMaterialRequest courseMaterialRequest) {
         courseService.findCourseById(userId, courseId).orElseThrow(CourseNotFoundException::new);
-        return courseMaterialRepository.create(courseId, courseMaterialRequest.content(), courseMaterialRequest.type());
+        CourseMaterialResponse newCourseMaterial = courseMaterialRepository.create(courseId, courseMaterialRequest.content(), courseMaterialRequest.type());
+        analyzeCoverageService.analyzeCoverage(userId, courseId, newCourseMaterial.id());
+        return newCourseMaterial;
     }
 }
