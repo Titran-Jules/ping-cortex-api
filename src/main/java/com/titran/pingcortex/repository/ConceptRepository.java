@@ -49,6 +49,23 @@ public class ConceptRepository {
         return concept;
     }
 
+    public Optional<ConceptResponse> findById(UUID conceptId) {
+        String sql = """
+            SELECT id, name, description, position, coverage_status, suggested_coverage
+            FROM concept WHERE id = ?
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        )  {
+            stmt.setObject(1, conceptId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(conceptResponseRowMapper(rs)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find the concept", e);
+        }
+    }
+
     public List<ConceptResponse> findAllByCourseId(UUID userId, UUID courseId) {
         String sql = """
             SELECT c.id, c.name, c.description, c.position, c.coverage_status, c.suggested_coverage
