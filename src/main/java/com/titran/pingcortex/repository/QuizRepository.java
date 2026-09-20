@@ -9,12 +9,11 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Repository
 @AllArgsConstructor
@@ -150,6 +149,75 @@ public class QuizRepository {
             throw new DataAccessException("Failed to select quiz_option", e);
         }
         return responses;
+    }
+
+    public Map<UUID, List<QuizOptionResponse>> findQuizOptionsByQuestionIds(List<UUID> questionIds) {
+        if (questionIds.isEmpty()) {
+            return Map.of();
+        }
+        String sql = """
+        SELECT id, question_id, text
+        FROM quiz_option
+        WHERE question_id = ANY(?)
+    """;
+        Map<UUID, List<QuizOptionResponse>> optionsByQuestion = new HashMap<>();
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+             PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            Array questionIdsArray = connection.get().createArrayOf("uuid", questionIds.toArray());
+            stmt.setArray(1, questionIdsArray);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    UUID questionId = rs.getObject("question_id", UUID.class);
+                    QuizOptionResponse option = quizOptionRowMapper(rs);
+                    optionsByQuestion.computeIfAbsent(questionId, k -> new ArrayList<>()).add(option);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to select quiz_option", e);
+        }
+        return optionsByQuestion;
+    }
+
+    public int findOrCreateMasteryLevel(UUID userId, UUID conceptId) {
+        String upsertSql = """
+            INSERT INTO user_concept_mastery (id, user_id, concept_id, mastery_level)
+            VALUES (?, ?, ?, 0)
+            ON CONFLICT (user_id, concept_id) DO NOTHING
+            RETURNING mastery_level;
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+             PreparedStatement stmt = connection.get().prepareStatement(upsertSql)
+        ) {
+            stmt.setObject(1, UUID.randomUUID());
+            stmt.setObject(2, userId);
+            stmt.setObject(3, conceptId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("mastery_level");
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to upsert user_concept_mastery", e);
+        }
+        String selectSql = """
+            SELECT mastery_level FROM user_concept_mastery
+            WHERE user_id = ? AND concept_id = ?;
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+             PreparedStatement stmt = connection.get().prepareStatement(selectSql)
+        ) {
+            stmt.setObject(1, userId);
+            stmt.setObject(2, conceptId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("mastery_level");
+                }
+                throw new DataAccessException("Mastery row missing after conflict", null);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to select user_concept_mastery", e);
+        }
     }
 
     private QuizQuestionResponse quizQuestionRowMapper(ResultSet rs) throws SQLException {
