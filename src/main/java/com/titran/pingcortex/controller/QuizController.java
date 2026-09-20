@@ -19,7 +19,7 @@ public class QuizController {
     private final QuizService quizService;
 
     @PostMapping("/concepts/{conceptId}/quiz")
-    public ResponseEntity<List<QuizQuestionResponse>> findQuestionsAndOptions(@PathVariable UUID conceptId, HttpServletRequest request) {
+    public ResponseEntity<List<QuizQuestionResponse>> startQuiz(@PathVariable UUID conceptId, HttpServletRequest request) {
         UUID userId = CurrentUser.id(request);
         return ResponseEntity.ok(quizService.selectQuizQuestions(userId, conceptId));
     }
