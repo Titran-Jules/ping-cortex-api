@@ -1,6 +1,8 @@
 package com.titran.pingcortex.repository;
 
+import com.titran.pingcortex.dto.response.QuizOptionAfterAttempt;
 import com.titran.pingcortex.dto.response.QuizOptionResponse;
+import com.titran.pingcortex.dto.response.QuizQuestionAfterAttempt;
 import com.titran.pingcortex.dto.response.QuizQuestionResponse;
 import com.titran.pingcortex.exception.DataAccessException;
 import com.titran.pingcortex.model.Difficulty;
@@ -19,6 +21,59 @@ import java.util.*;
 @AllArgsConstructor
 public class QuizRepository {
     private final DataSource dataSource;
+
+    public Optional<QuizQuestionAfterAttempt> findQuizQuestionById(UUID quizQuestionId) {
+        String sql = """
+            SELECT id, concept_id, question_text, difficulty
+            FROM quiz_question
+            WHERE id = ?
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+             PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, quizQuestionId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+                UUID id = rs.getObject("id", UUID.class);
+                UUID conceptId = rs.getObject("concept_id", UUID.class);
+                String questionText = rs.getString("question_text");
+                Difficulty difficulty = Difficulty.valueOf(rs.getString("difficulty"));
+
+                List<QuizOptionAfterAttempt> options = findQuizOptionsWithCorrectFlag(id);
+                return Optional.of(new QuizQuestionAfterAttempt(id, conceptId, questionText, difficulty, options));
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find quiz question", e);
+        }
+    }
+
+    private List<QuizOptionAfterAttempt> findQuizOptionsWithCorrectFlag(UUID questionId) {
+        String sql = """
+            SELECT id, text, is_correct
+            FROM quiz_option
+            WHERE question_id = ?
+        """;
+        List<QuizOptionAfterAttempt> options = new ArrayList<>();
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+             PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, questionId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    options.add(new QuizOptionAfterAttempt(
+                            rs.getObject("id", UUID.class),
+                            rs.getString("text"),
+                            rs.getBoolean("is_correct")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find quiz options", e);
+        }
+        return options;
+    }
 
     public QuizQuestionResponse createQuizQuestion(UUID conceptId, String questionText, Difficulty difficulty) {
         String sql = """
