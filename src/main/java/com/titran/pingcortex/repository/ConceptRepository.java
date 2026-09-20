@@ -22,6 +22,26 @@ import java.util.UUID;
 public class ConceptRepository {
     private final DataSource dataSource;
 
+    public boolean belongsToUser(UUID userId, UUID conceptId) {
+        String sql = """
+        SELECT 1
+        FROM concept c
+        JOIN course co ON co.id = c.course_id
+        WHERE c.id = ? AND co.user_id = ?
+    """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+             PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, conceptId);
+            stmt.setObject(2, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to check concept ownership", e);
+        }
+    }
+
     public ConceptResponse create(UUID courseId, String name, String description, int position) {
         String sql = """
             INSERT INTO concept (id, course_id, name, description, position)

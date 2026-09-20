@@ -22,16 +22,19 @@ import java.util.*;
 public class QuizRepository {
     private final DataSource dataSource;
 
-    public Optional<QuizQuestionAfterAttempt> findQuizQuestionById(UUID quizQuestionId) {
+    public Optional<QuizQuestionAfterAttempt> findQuizQuestionById(UUID userId, UUID quizQuestionId) {
         String sql = """
-            SELECT id, concept_id, question_text, difficulty
-            FROM quiz_question
-            WHERE id = ?
+            SELECT qq.id, qq.concept_id, qq.question_text, qq.difficulty
+            FROM quiz_question qq
+            JOIN concept c ON c.id = qq.concept_id
+            JOIN course co ON co.id = c.course_id
+            WHERE qq.id = ? AND co.user_id = ?
         """;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
              PreparedStatement stmt = connection.get().prepareStatement(sql)
         ) {
             stmt.setObject(1, quizQuestionId);
+            stmt.setObject(2, userId);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (!rs.next()) {
                     return Optional.empty();
@@ -40,7 +43,6 @@ public class QuizRepository {
                 UUID conceptId = rs.getObject("concept_id", UUID.class);
                 String questionText = rs.getString("question_text");
                 Difficulty difficulty = Difficulty.valueOf(rs.getString("difficulty"));
-
                 List<QuizOptionAfterAttempt> options = findQuizOptionsWithCorrectFlag(id);
                 return Optional.of(new QuizQuestionAfterAttempt(id, conceptId, questionText, difficulty, options));
             }

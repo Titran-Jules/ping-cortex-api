@@ -2,7 +2,9 @@ package com.titran.pingcortex.service;
 
 import com.titran.pingcortex.dto.response.QuizOptionResponse;
 import com.titran.pingcortex.dto.response.QuizQuestionResponse;
+import com.titran.pingcortex.exception.ConceptNotFoundException;
 import com.titran.pingcortex.model.Difficulty;
+import com.titran.pingcortex.repository.ConceptRepository;
 import com.titran.pingcortex.repository.QuizRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class QuizService {
     private final QuizRepository quizRepository;
+    private final ConceptRepository conceptRepository;
 
     private static final Map<String, Map<Difficulty, Integer>> COUNT_BY_MASTERY = Map.of(
             "LOW", Map.of(Difficulty.EASY, 6, Difficulty.MEDIUM, 3, Difficulty.HARD, 1),
@@ -24,6 +27,9 @@ public class QuizService {
     );
 
     public List<QuizQuestionResponse> selectQuizQuestions(UUID userId, UUID conceptId) {
+        if (!conceptRepository.belongsToUser(userId, conceptId)) {
+            throw new ConceptNotFoundException();
+        }
         int masteryLevel = quizRepository.findOrCreateMasteryLevel(userId, conceptId);
         String masteryBucket;
         if (masteryLevel < 30) {

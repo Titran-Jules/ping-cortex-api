@@ -34,7 +34,7 @@ public class QuizAttemptService {
 
     @Transactional
     public QuizAttemptResponse getQuizQuestionAfterAttempt(UUID userId, UUID quizQuestionId, QuizSelectedOption quizSelectedOption) {
-        QuizQuestionAfterAttempt question = quizRepository.findQuizQuestionById(quizQuestionId)
+        QuizQuestionAfterAttempt question = quizRepository.findQuizQuestionById(userId, quizQuestionId)
                 .orElseThrow(QuizNotFoundException::new);
 
         boolean isCorrect = question.options().stream()
