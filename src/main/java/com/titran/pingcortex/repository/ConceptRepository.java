@@ -176,6 +176,25 @@ public class ConceptRepository {
         }
     }
 
+    public Optional<UUID> findPreviousConceptId(UUID courseId, int position) {
+        String sql = """
+            SELECT id
+            FROM concept
+            WHERE course_id = ? AND position = ? - 1
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, courseId);
+            stmt.setInt(2, position);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(rs.getObject("id", UUID.class)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find previous concept id", e);
+        }
+    }
+
     private void updateSuggestedCoverage(UUID userId, UUID courseId, UUID conceptId, UUID materialId, boolean isAccepted) {
         String sql = """
             UPDATE concept c

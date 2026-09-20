@@ -31,15 +31,21 @@ public class ConceptService {
     }
 
     public ConceptResponse advanceConceptCoverage(UUID userId, UUID courseId, UUID conceptId) {
-        ConceptMasteryResponse conceptMastery = conceptRepository.findConceptMastery(userId, conceptId)
+        ConceptResponse conceptToAdvance = conceptRepository.findById(conceptId)
                 .orElseThrow(ConceptNotFoundException::new);
-
-        if (conceptMastery.masteryLevel() >= 80) {
-            return conceptRepository.advanceCoverage(userId, courseId, conceptId)
+        if (conceptToAdvance.position() > 1) {
+            UUID previousConceptId = conceptRepository.findPreviousConceptId(courseId, conceptToAdvance.position())
                     .orElseThrow(ConceptNotFoundException::new);
-        } else {
-            throw new MasteryThresholdException();
+            int previousMasteryLevel = conceptRepository.findConceptMastery(userId, previousConceptId)
+                    .map(ConceptMasteryResponse::masteryLevel)
+                    .orElse(0);
+
+            if (previousMasteryLevel < 80) {
+                throw new MasteryThresholdException();
+            }
         }
+        return conceptRepository.advanceCoverage(userId, courseId, conceptId)
+                .orElseThrow(ConceptNotFoundException::new);
     }
 
     public ConceptMasteryResponse findConceptMastery(UUID userId, UUID conceptId) {
