@@ -75,7 +75,7 @@ public class QuizRepository {
     public int countByConceptId(UUID conceptId) {
         String sql = """
             SELECT COUNT(*) AS count
-            FROM quiz_questions
+            FROM quiz_question
             WHERE concept_id = ?;
         """;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);

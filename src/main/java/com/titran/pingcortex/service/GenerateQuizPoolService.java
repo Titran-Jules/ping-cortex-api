@@ -33,23 +33,23 @@ public class GenerateQuizPoolService {
 
     @Async("taskExecutor")
     @Transactional
-    public void generateQuizPool(UUID userId, UUID conceptId, Difficulty difficulty, int count) {
+    public void generateQuizPool(UUID userId, UUID conceptId, int countPerDifficulty) {
         if (quizRepository.countByConceptId(conceptId) > 0) {
-            throw new IllegalStateException("Concept with id " + conceptId + " already has quiz pool");
+            return;
         } else {
-            UserApiKey activeKey = userRepository.findActiveApiKey(userId)
-                    .orElseThrow(UserNotFoundException::new);
+            UserApiKey activeKey = userRepository.findActiveApiKey(userId).orElseThrow(UserNotFoundException::new);
             String decryptedKey = encryptionService.decrypt(activeKey.encryptedKey());
-            AiProvider provider = AiProvider.valueOf(activeKey.provider());
-            AiClient aiClient = aiClientResolver.resolve(provider);
-            ConceptResponse concept = conceptRepository.findById(conceptId)
-                            .orElseThrow(ConceptNotFoundException::new);
-            List<AiResults.QuizQuestionSuggestion> suggestions = aiClient.generateQuizBatch(decryptedKey, concept.name(), concept.description(), difficulty, count);
+            AiClient aiClient = aiClientResolver.resolve(AiProvider.valueOf(activeKey.provider().toUpperCase()));
+            ConceptResponse concept = conceptRepository.findById(conceptId).orElseThrow(ConceptNotFoundException::new);
 
-            for (AiResults.QuizQuestionSuggestion suggestion : suggestions) {
-                QuizQuestionResponse quizQuestion = quizRepository.createQuizQuestion(conceptId, suggestion.questionText(), difficulty);
-                for (AiResults.QuizOptionSuggestion optionSuggestion : suggestion.options()) {
-                    quizRepository.createQuizOption(quizQuestion.id(), optionSuggestion.text(), optionSuggestion.correct());
+            for (Difficulty difficulty : Difficulty.values()) {
+                List<AiResults.QuizQuestionSuggestion> suggestions =
+                        aiClient.generateQuizBatch(decryptedKey, concept.name(), concept.description(), difficulty, countPerDifficulty);
+                for (AiResults.QuizQuestionSuggestion suggestion : suggestions) {
+                    QuizQuestionResponse quizQuestion = quizRepository.createQuizQuestion(conceptId, suggestion.questionText(), difficulty);
+                    for (AiResults.QuizOptionSuggestion optionSuggestion : suggestion.options()) {
+                        quizRepository.createQuizOption(quizQuestion.id(), optionSuggestion.text(), optionSuggestion.correct());
+                    }
                 }
             }
         }
