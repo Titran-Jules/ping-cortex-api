@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -88,5 +89,82 @@ public class QuizRepository {
         } catch (SQLException e) {
             throw new DataAccessException("Failed to count questions", e);
         }
+    }
+
+    public List<QuizQuestionResponse> selectQuestionsForQuiz(UUID userId, UUID conceptId, Difficulty difficulty, int count) {
+        String sql = """
+            SELECT qq.*,
+                CASE
+                    WHEN EXISTS (SELECT 1 FROM quiz_attempt qa WHERE qa.question_id = qq.id AND qa.user_id = ? AND qa.is_correct = FALSE
+                                AND NOT EXISTS (SELECT 1 FROM quiz_attempt qa2 WHERE qa2.question_id = qq.id AND qa2.user_id = ? AND qa2.is_correct = TRUE))
+                        THEN 0
+                    WHEN NOT EXISTS (SELECT 1 FROM quiz_attempt qa WHERE qa.question_id = qq.id AND qa.user_id = ?)
+                        THEN 1
+                    ELSE 2
+                END AS priority,
+            (SELECT MAX(created_at) FROM quiz_attempt qa WHERE qa.question_id = qq.id AND qa.user_id = ?) AS last_attempt_at
+            FROM quiz_question qq
+            WHERE qq.concept_id = ? AND qq.difficulty = ?
+            ORDER BY priority ASC, last_attempt_at ASC NULLS FIRST
+            LIMIT ?;
+        """;
+        List<QuizQuestionResponse> responses = new ArrayList<>();
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, userId);
+            stmt.setObject(2, userId);
+            stmt.setObject(3, userId);
+            stmt.setObject(4, userId);
+            stmt.setObject(5, conceptId);
+            stmt.setString(6, difficulty.name());
+            stmt.setInt(7, count);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    responses.add(quizQuestionRowMapper(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to select quiz_question", e);
+        }
+        return responses;
+    }
+
+    public List<QuizOptionResponse> findQuizOptions(UUID questionId) {
+        String sql = """
+            SELECT id, text
+            FROM quiz_option
+            WHERE question_id = ?
+        """;
+        List<QuizOptionResponse> responses = new ArrayList<>();
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, questionId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    responses.add(quizOptionRowMapper(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to select quiz_option", e);
+        }
+        return responses;
+    }
+
+    private QuizQuestionResponse quizQuestionRowMapper(ResultSet rs) throws SQLException {
+        return new QuizQuestionResponse(
+                rs.getObject("id", UUID.class),
+                rs.getString("question_text"),
+                Difficulty.valueOf(rs.getString("difficulty")),
+                new ArrayList<>()
+        );
+    }
+
+    private QuizOptionResponse quizOptionRowMapper(ResultSet rs) throws SQLException {
+        return new QuizOptionResponse(
+                rs.getObject("id", UUID.class),
+                rs.getString("text")
+        );
     }
 }
