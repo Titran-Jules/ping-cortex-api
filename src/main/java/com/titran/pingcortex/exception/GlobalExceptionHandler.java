@@ -55,6 +55,18 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("COURSE_MATERIAL_NOT_FOUND", e.getMessage()));
     }
 
+    @ExceptionHandler(QuizNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleQuizNotFound(QuizNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("QUIZ_NOT_FOUND", e.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidOptionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidOptionException(InvalidOptionException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("INVALID_OPTION", e.getMessage()));
+    }
+
     @ExceptionHandler(MasteryThresholdException.class)
     public ResponseEntity<ErrorResponse> handleMasteryThreshold(MasteryThresholdException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

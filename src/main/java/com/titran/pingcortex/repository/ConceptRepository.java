@@ -22,6 +22,26 @@ import java.util.UUID;
 public class ConceptRepository {
     private final DataSource dataSource;
 
+    public boolean belongsToUser(UUID userId, UUID conceptId) {
+        String sql = """
+        SELECT 1
+        FROM concept c
+        JOIN course co ON co.id = c.course_id
+        WHERE c.id = ? AND co.user_id = ?
+    """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+             PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, conceptId);
+            stmt.setObject(2, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to check concept ownership", e);
+        }
+    }
+
     public ConceptResponse create(UUID courseId, String name, String description, int position) {
         String sql = """
             INSERT INTO concept (id, course_id, name, description, position)
@@ -47,6 +67,23 @@ public class ConceptRepository {
             throw new DataAccessException("Failed to create the concept", e);
         }
         return concept;
+    }
+
+    public Optional<ConceptResponse> findById(UUID conceptId) {
+        String sql = """
+            SELECT id, name, description, position, coverage_status, suggested_coverage
+            FROM concept WHERE id = ?
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        )  {
+            stmt.setObject(1, conceptId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(conceptResponseRowMapper(rs)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find the concept", e);
+        }
     }
 
     public List<ConceptResponse> findAllByCourseId(UUID userId, UUID courseId) {
@@ -156,6 +193,25 @@ public class ConceptRepository {
             }
         } catch (SQLException e) {
             throw new DataAccessException("Failed to find concept mastery", e);
+        }
+    }
+
+    public Optional<UUID> findPreviousConceptId(UUID courseId, int position) {
+        String sql = """
+            SELECT id
+            FROM concept
+            WHERE course_id = ? AND position = ? - 1
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, courseId);
+            stmt.setInt(2, position);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? Optional.of(rs.getObject("id", UUID.class)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find previous concept id", e);
         }
     }
 

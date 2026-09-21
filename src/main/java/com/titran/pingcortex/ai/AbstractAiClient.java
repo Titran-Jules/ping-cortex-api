@@ -90,6 +90,29 @@ public abstract class AbstractAiClient implements AiClient {
         return new QuizQuestionSuggestion((String) parsed.get("questionText"), difficulty, options);
     }
 
+    private record QuizQuestionDraft(String questionText, List<QuizOptionSuggestion> options) {}
+
+    @Override
+    public List<QuizQuestionSuggestion> generateQuizBatch(String apiKey, String conceptName, String conceptDescription, Difficulty difficulty, int count) {
+        String systemPrompt = """
+            Tu generes %d questions a choix multiples de difficulte %s sur le
+            concept suivant : "%s" - %s.
+            Chaque question doit etre distincte des autres (pas de reformulation
+            d'une meme question), et rester independante (pas de reference a une
+            autre question du lot).
+            Chaque question a exactement 4 options, une seule correcte.
+            Reponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte avant
+            ou apres, au format exact :
+            [{"questionText": "...", "options": [{"text": "...", "correct": true|false}, ...]}]
+        """.formatted(count, difficulty, conceptName, conceptDescription);
+
+        String rawResponse = callProviderApi(apiKey, systemPrompt, List.of(new ChatTurn("user", "Genere une sequence de quiz pour maitriser ce concept")), true);
+        List<QuizQuestionDraft> drafts = parseJson(rawResponse, new TypeReference<List<QuizQuestionDraft>>() {});
+        return drafts.stream()
+                .map(draft -> new QuizQuestionSuggestion(draft.questionText(), difficulty, draft.options()))
+                .toList();
+    }
+
     @Override
     public FeynmanEvaluationResult evaluateFeynman(String apiKey, String conceptName, String conceptDescription, String explanationText) {
         String systemPrompt = """

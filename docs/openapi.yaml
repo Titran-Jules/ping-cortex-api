@@ -105,7 +105,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserResponse"
-        patch:
+    patch:
       tags: [User]
       summary: Update the current user's profile
       requestBody:
@@ -387,12 +387,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MasteryResponse"
-  /concepts/{conceptId}/quiz/next:
+  /concepts/{conceptId}/quiz:
     parameters:
       - $ref: "#/components/parameters/ConceptId"
-    get:
+    post:
       tags: [Quiz]
-      summary: Get the next adapted quiz question for this concept (difficulty based on current mastery)
+      summary: Get adapted quiz questions for this concept (difficulty based on current mastery)
       responses:
         '200':
           description: Next question (correct answer is never included here)
@@ -898,26 +898,16 @@ components:
     QuizAttemptResponse:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
-        questionId:
-          type: string
-          format: uuid
-        selectedOptionId:
-          type: string
-          format: uuid
+        isCorrect:
+          type: boolean
+          example: false
         correctOptionId:
           type: string
           format: uuid
           description: Revealed only after the attempt is submitted.
-        isCorrect:
-          type: boolean
-          example: false
-        createdAt:
-          type: string
-          format: date-time
-          example: 2026-09-04T17:10:00
+        newMastery:
+          type: integer
+          example: 70
     FeynmanSubmissionCreate:
       type: object
       properties:

@@ -5,8 +5,10 @@ import com.titran.pingcortex.dto.response.ConceptResponse;
 import com.titran.pingcortex.exception.ConceptNotFoundException;
 import com.titran.pingcortex.exception.MasteryThresholdException;
 import com.titran.pingcortex.repository.ConceptRepository;
+import com.titran.pingcortex.util.TransactionUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,14 +17,20 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ConceptService {
     private final ConceptRepository conceptRepository;
+    private final GenerateQuizPoolService generateQuizPoolService;
+
+    private static final int QUESTIONS_PER_DIFFICULTY = 6;
 
     public List<ConceptResponse> findAll(UUID userId, UUID courseId) {
         return conceptRepository.findAllByCourseId(userId, courseId);
     }
 
+    @Transactional
     public ConceptResponse confirmConceptCoverage(UUID userId, UUID courseId, UUID conceptId) {
-        return conceptRepository.confirmCoverage(userId, courseId, conceptId)
+        ConceptResponse concept = conceptRepository.confirmCoverage(userId, courseId, conceptId)
                 .orElseThrow(ConceptNotFoundException::new);
+        TransactionUtils.afterCommit(() -> generateQuizPoolService.generateQuizPool(userId, conceptId, QUESTIONS_PER_DIFFICULTY));
+        return concept;
     }
 
     public ConceptResponse revertConceptCoverage(UUID userId, UUID courseId, UUID conceptId) {
@@ -30,16 +38,26 @@ public class ConceptService {
                 .orElseThrow(ConceptNotFoundException::new);
     }
 
+    @Transactional
     public ConceptResponse advanceConceptCoverage(UUID userId, UUID courseId, UUID conceptId) {
-        ConceptMasteryResponse conceptMastery = conceptRepository.findConceptMastery(userId, conceptId)
+        ConceptResponse conceptToAdvance = conceptRepository.findById(conceptId)
                 .orElseThrow(ConceptNotFoundException::new);
-
-        if (conceptMastery.masteryLevel() >= 80) {
-            return conceptRepository.advanceCoverage(userId, courseId, conceptId)
+        if (conceptToAdvance.position() > 1) {
+            UUID previousConceptId = conceptRepository.findPreviousConceptId(courseId, conceptToAdvance.position())
                     .orElseThrow(ConceptNotFoundException::new);
-        } else {
-            throw new MasteryThresholdException();
+            int previousMasteryLevel = conceptRepository.findConceptMastery(userId, previousConceptId)
+                    .map(ConceptMasteryResponse::masteryLevel)
+                    .orElse(0);
+
+            if (previousMasteryLevel < 80) {
+                throw new MasteryThresholdException();
+            }
         }
+
+        ConceptResponse concept = conceptRepository.advanceCoverage(userId, courseId, conceptId)
+                .orElseThrow(ConceptNotFoundException::new);
+        TransactionUtils.afterCommit(() -> generateQuizPoolService.generateQuizPool(userId, conceptId, QUESTIONS_PER_DIFFICULTY));
+        return concept;
     }
 
     public ConceptMasteryResponse findConceptMastery(UUID userId, UUID conceptId) {
