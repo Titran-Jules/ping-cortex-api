@@ -7,7 +7,10 @@ import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.UUID;
 
 @Repository
@@ -32,6 +35,27 @@ public class QuizAttemptRepository {
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Failed to insert quiz attempt", e);
+        }
+    }
+
+    public int countSince(UUID userId, UUID conceptId, Instant since) {
+        String sql = """
+        SELECT COUNT(*) AS count
+        FROM quiz_attempt qa
+        JOIN quiz_question qq ON qq.id = qa.question_id
+        WHERE qa.user_id = ? AND qq.concept_id = ? AND qa.created_at > ?
+    """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+             PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, userId);
+            stmt.setObject(2, conceptId);
+            stmt.setTimestamp(3, Timestamp.from(since));
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getInt("count") : 0;
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to count quiz attempt", e);
         }
     }
 }

@@ -425,21 +425,22 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/QuizAttemptResponse"
-  /concepts/{conceptId}/feynman:
+  /concepts/{conceptId}/next-review-activity:
     parameters:
       - $ref: "#/components/parameters/ConceptId"
     get:
       tags: [Feynman]
-      summary: List this user's past Feynman submissions for a concept
+      summary: Get next suggested review activity
       responses:
         '200':
-          description: List of submissions
+          description: Suggested activity
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/FeynmanSubmissionResponse"
+                $ref: "#/components/schemas/NextActivityResponse"
+  /concepts/{conceptId}/feynman-submissions:
+    parameters:
+      - $ref: "#/components/parameters/ConceptId"
     post:
       tags: [Feynman]
       summary: Submit a free-text explanation of the concept for AI evaluation
@@ -963,6 +964,13 @@ components:
           type: string
           format: date-time
           example: 2026-09-04T17:30:00
+    NextActivityResponse:
+      type: object
+      properties: 
+        suggestedActivity:
+          type: string
+          enum: [FEYNMAN, QUIZ]
+          example: FEYNMAN
     ChatSessionResponse:
       type: object
       properties:

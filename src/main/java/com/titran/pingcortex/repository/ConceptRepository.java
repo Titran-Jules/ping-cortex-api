@@ -24,11 +24,11 @@ public class ConceptRepository {
 
     public boolean belongsToUser(UUID userId, UUID conceptId) {
         String sql = """
-        SELECT 1
-        FROM concept c
-        JOIN course co ON co.id = c.course_id
-        WHERE c.id = ? AND co.user_id = ?
-    """;
+            SELECT 1
+            FROM concept c
+            JOIN course co ON co.id = c.course_id
+            WHERE c.id = ? AND co.user_id = ?
+        """;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
              PreparedStatement stmt = connection.get().prepareStatement(sql)
         ) {
@@ -39,6 +39,24 @@ public class ConceptRepository {
             }
         } catch (SQLException e) {
             throw new DataAccessException("Failed to check concept ownership", e);
+        }
+    }
+
+    public boolean isCoveredOrAnticipated(UUID conceptId) {
+        String sql = """
+            SELECT 1
+            FROM concept
+            WHERE id = ? AND coverage_status != 'NOT_COVERED'
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+             PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, conceptId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to check concept status", e);
         }
     }
 
