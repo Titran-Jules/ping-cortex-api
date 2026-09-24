@@ -49,6 +49,12 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("CONCEPT_NOT_FOUND", e.getMessage()));
     }
 
+    @ExceptionHandler(ConceptNotAvailableException.class)
+    public ResponseEntity<ErrorResponse> handleConceptNotAvailable(ConceptNotAvailableException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse("CONCEPT_NOT_AVAILABLE", e.getMessage()));
+    }
+
     @ExceptionHandler(CourseMaterialNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCourseMaterialNotFound(CourseMaterialNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
