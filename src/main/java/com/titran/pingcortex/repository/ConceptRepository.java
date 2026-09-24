@@ -46,10 +46,10 @@ public class ConceptRepository {
         String sql = """
             SELECT 1
             FROM concept
-            WHERE concept_id = ? AND coverage_status != 'NOT_COVERED'
+            WHERE id = ? AND coverage_status != 'NOT_COVERED'
         """;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
-            PreparedStatement stmt = connection.get().prepareStatement(sql)
+             PreparedStatement stmt = connection.get().prepareStatement(sql)
         ) {
             stmt.setObject(1, conceptId);
             try (ResultSet rs = stmt.executeQuery()) {
