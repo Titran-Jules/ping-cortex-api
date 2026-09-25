@@ -1,5 +1,6 @@
 package com.titran.pingcortex.service;
 
+import com.titran.pingcortex.dto.response.ChatExchangeResponse;
 import com.titran.pingcortex.dto.response.ChatMessagesResponse;
 import com.titran.pingcortex.dto.response.ChatSessionResponse;
 import com.titran.pingcortex.dto.response.CourseResponse;
@@ -25,6 +26,10 @@ public class ChatAiService {
     }
 
     public List<ChatMessagesResponse> findAllMessagesBySessionId(UUID userId, UUID sessionId) {
-        return chatAiRepository.findAllMessagesByCourseId(userId, sessionId);
+        return chatAiRepository.findAllMessagesBySessionId(userId, sessionId);
+    }
+
+    public ChatExchangeResponse discussWithAi(UUID userId, UUID sessionId, String newMessage) {
+
     }
 }

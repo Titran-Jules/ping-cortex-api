@@ -2,7 +2,9 @@ package com.titran.pingcortex.repository;
 
 import com.titran.pingcortex.dto.response.ChatMessagesResponse;
 import com.titran.pingcortex.dto.response.ChatSessionResponse;
+import com.titran.pingcortex.dto.response.CourseResponse;
 import com.titran.pingcortex.exception.DataAccessException;
+import com.titran.pingcortex.model.AnalysisStatus;
 import com.titran.pingcortex.model.Role;
 import com.titran.pingcortex.util.ManagedConnection;
 import lombok.AllArgsConstructor;
@@ -14,6 +16,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -49,7 +52,7 @@ public class ChatAiRepository {
         return response;
     }
 
-    public List<ChatMessagesResponse> findAllMessagesByCourseId(UUID userId, UUID sessionId) {
+    public List<ChatMessagesResponse> findAllMessagesBySessionId(UUID userId, UUID sessionId) {
         String sql = """
             SELECT m.id, m.role, m.content, m.created_at
             FROM chat_message m
@@ -71,6 +74,35 @@ public class ChatAiRepository {
             throw new DataAccessException("Failed to find all messages of this course", e);
         }
         return messages;
+    }
+
+    public Optional<CourseResponse> findCourseBySessionId(UUID userId, UUID sessionId) {
+        String sql = """
+            SELECT c.id, c.title, c.description, c.is_active, c.analysis_status, c.created_at
+            FROM course c
+            JOIN chat_session s ON s.course_id = c.id
+            WHERE s.user_id = ? AND c.session_id = ?
+        """;
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, userId);
+            stmt.setObject(2, sessionId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ?
+                        Optional.of(new CourseResponse(
+                                rs.getObject("id", UUID.class),
+                                rs.getString("title"),
+                                rs.getString("description"),
+                                rs.getBoolean("is_active"),
+                                AnalysisStatus.valueOf(rs.getString("analysis_status")),
+                                rs.getTimestamp("created_at").toInstant()
+                        )) :
+                        Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find course by session id", e);
+        }
     }
 
     private ChatMessagesResponse messageRowMapper(ResultSet rs) throws SQLException {
