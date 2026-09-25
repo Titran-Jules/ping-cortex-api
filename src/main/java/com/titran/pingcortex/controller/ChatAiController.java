@@ -1,5 +1,6 @@
 package com.titran.pingcortex.controller;
 
+import com.titran.pingcortex.dto.response.ChatMessagesResponse;
 import com.titran.pingcortex.dto.response.ChatSessionResponse;
 import com.titran.pingcortex.security.CurrentUser;
 import com.titran.pingcortex.service.ChatAiService;
@@ -7,10 +8,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -23,5 +26,11 @@ public class ChatAiController {
         UUID userId = CurrentUser.id(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(chatAiService.createSession(courseId, userId));
+    }
+
+    @GetMapping("/chat-sessions/{chatSessionId}/messages")
+    public ResponseEntity<List<ChatMessagesResponse>> findAllMessagesBySessionId(@PathVariable UUID chatSessionId, HttpServletRequest request) {
+        UUID userId = CurrentUser.id(request);
+        return ResponseEntity.ok(chatAiService.findAllMessagesBySessionId(userId, chatSessionId));
     }
 }
