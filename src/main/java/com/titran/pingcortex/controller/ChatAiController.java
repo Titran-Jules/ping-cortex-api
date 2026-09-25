@@ -1,5 +1,7 @@
 package com.titran.pingcortex.controller;
 
+import com.titran.pingcortex.dto.request.SendMessageRequest;
+import com.titran.pingcortex.dto.response.ChatExchangeResponse;
 import com.titran.pingcortex.dto.response.ChatMessagesResponse;
 import com.titran.pingcortex.dto.response.ChatSessionResponse;
 import com.titran.pingcortex.security.CurrentUser;
@@ -8,10 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,5 +31,12 @@ public class ChatAiController {
     public ResponseEntity<List<ChatMessagesResponse>> findAllMessagesBySessionId(@PathVariable UUID chatSessionId, HttpServletRequest request) {
         UUID userId = CurrentUser.id(request);
         return ResponseEntity.ok(chatAiService.findAllMessagesBySessionId(userId, chatSessionId));
+    }
+
+    @PostMapping("/chat-sessions/{chatSessionId}/messages")
+    public ResponseEntity<ChatExchangeResponse> askAi(@PathVariable UUID chatSessionId, HttpServletRequest request, @RequestBody SendMessageRequest content) {
+        UUID userId = CurrentUser.id(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(chatAiService.askAi(userId, chatSessionId, content.content()));
     }
 }

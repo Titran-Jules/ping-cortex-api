@@ -52,6 +52,31 @@ public class ChatAiRepository {
         return response;
     }
 
+    public ChatMessagesResponse insertNewMessage(UUID sessionId, Role role, String content) {
+        String sql = """
+            INSERT INTO chat_message (id, session_id, role, content) VALUES (?, ?, ?, ?)
+            RETURNING id, role, content, created_at
+        """;
+        ChatMessagesResponse response = null;
+        try  (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            UUID messageId = UUID.randomUUID();
+            stmt.setObject(1, messageId);
+            stmt.setObject(2, sessionId);
+            stmt.setString(3, role.name());
+            stmt.setString(4, content);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    response = messageRowMapper(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to insert a new chat message", e);
+        }
+        return response;
+    }
+
     public List<ChatMessagesResponse> findAllMessagesBySessionId(UUID userId, UUID sessionId) {
         String sql = """
             SELECT m.id, m.role, m.content, m.created_at

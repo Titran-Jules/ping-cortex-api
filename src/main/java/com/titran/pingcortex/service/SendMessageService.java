@@ -8,6 +8,7 @@ import com.titran.pingcortex.dto.response.CourseResponse;
 import com.titran.pingcortex.exception.CourseNotFoundException;
 import com.titran.pingcortex.exception.NoActiveKeyException;
 import com.titran.pingcortex.model.AiProvider;
+import com.titran.pingcortex.model.Role;
 import com.titran.pingcortex.model.UserApiKey;
 import com.titran.pingcortex.repository.ChatAiRepository;
 import com.titran.pingcortex.repository.UserRepository;
