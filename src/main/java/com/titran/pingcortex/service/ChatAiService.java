@@ -34,7 +34,7 @@ public class ChatAiService {
     public ChatExchangeResponse askAi(UUID userId, UUID sessionId, String newMessage) {
         String aiResponse = sendMessageService.sendMessageToAi(userId, sessionId, newMessage);
         ChatMessagesResponse userMessage = chatAiRepository.insertNewMessage(sessionId, Role.USER, newMessage);
-        ChatMessagesResponse assistantMessage = chatAiRepository.insertNewMessage(sessionId, Role.ASSISTANT, newMessage);
+        ChatMessagesResponse assistantMessage = chatAiRepository.insertNewMessage(sessionId, Role.ASSISTANT, aiResponse);
 
         return new ChatExchangeResponse(userMessage, assistantMessage);
     }
