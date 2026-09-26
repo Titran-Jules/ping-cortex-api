@@ -106,7 +106,7 @@ public class ChatAiRepository {
             SELECT c.id, c.title, c.description, c.is_active, c.analysis_status, c.created_at
             FROM course c
             JOIN chat_session s ON s.course_id = c.id
-            WHERE s.user_id = ? AND c.session_id = ?
+            WHERE s.user_id = ? AND s.id = ?
         """;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
             PreparedStatement stmt = connection.get().prepareStatement(sql)
