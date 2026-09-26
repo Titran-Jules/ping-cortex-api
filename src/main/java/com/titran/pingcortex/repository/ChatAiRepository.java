@@ -27,7 +27,7 @@ public class ChatAiRepository {
     public ChatSessionResponse createSession(UUID userId, UUID courseId) {
         String sql = """
             INSERT INTO chat_session (id, user_id, course_id) VALUES (?, ?, ?)
-            RETURNING id,  user_id, course_id, created_at
+            RETURNING id, course_id, created_at
         """;
         ChatSessionResponse response = null;
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
