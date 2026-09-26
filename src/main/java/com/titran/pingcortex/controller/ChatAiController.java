@@ -24,7 +24,7 @@ public class ChatAiController {
     public ResponseEntity<ChatSessionResponse> createSession(@PathVariable UUID courseId, HttpServletRequest request) {
         UUID userId = CurrentUser.id(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(chatAiService.createSession(courseId, userId));
+                .body(chatAiService.createSession(userId, courseId));
     }
 
     @GetMapping("/chat-sessions/{chatSessionId}/messages")
