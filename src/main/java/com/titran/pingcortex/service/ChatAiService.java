@@ -5,7 +5,6 @@ import com.titran.pingcortex.dto.response.ChatMessagesResponse;
 import com.titran.pingcortex.dto.response.ChatSessionResponse;
 import com.titran.pingcortex.dto.response.CourseResponse;
 import com.titran.pingcortex.exception.CourseNotFoundException;
-import com.titran.pingcortex.model.Role;
 import com.titran.pingcortex.repository.ChatAiRepository;
 import com.titran.pingcortex.repository.CourseRepository;
 import lombok.AllArgsConstructor;
@@ -20,6 +19,7 @@ public class ChatAiService {
     private final SendMessageService sendMessageService;
     private final ChatAiRepository chatAiRepository;
     private final CourseRepository courseRepository;
+    private final ChatExchangePersistenceService chatExchangePersistenceService;
 
     public ChatSessionResponse createSession(UUID userId, UUID courseId) {
         CourseResponse checkCourseOfThisUser = courseRepository.findById(userId, courseId)
@@ -33,9 +33,6 @@ public class ChatAiService {
 
     public ChatExchangeResponse askAi(UUID userId, UUID sessionId, String newMessage) {
         String aiResponse = sendMessageService.sendMessageToAi(userId, sessionId, newMessage);
-        ChatMessagesResponse userMessage = chatAiRepository.insertNewMessage(sessionId, Role.USER, newMessage);
-        ChatMessagesResponse assistantMessage = chatAiRepository.insertNewMessage(sessionId, Role.ASSISTANT, aiResponse);
-
-        return new ChatExchangeResponse(userMessage, assistantMessage);
+        return chatExchangePersistenceService.persistExchange(sessionId, newMessage, aiResponse);
     }
 }
