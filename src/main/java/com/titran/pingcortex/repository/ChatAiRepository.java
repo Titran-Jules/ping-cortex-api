@@ -83,6 +83,7 @@ public class ChatAiRepository {
             FROM chat_message m
             JOIN chat_session s ON m.session_id = s.id
             WHERE s.user_id = ? AND m.session_id = ?
+            ORDER BY m.created_at ASC
         """;
         List<ChatMessagesResponse> messages = new ArrayList<>();
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
