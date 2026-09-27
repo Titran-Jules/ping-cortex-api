@@ -19,7 +19,7 @@ import java.util.UUID;
 public class ConceptService {
     private final ConceptRepository conceptRepository;
     private final GenerateQuizPoolService generateQuizPoolService;
-    private final ReviewScheduleRepository reviewScheduleRepository;
+    private final ReviewScheduleService reviewScheduleService;
 
     private static final int QUESTIONS_PER_DIFFICULTY = 6;
 
@@ -31,7 +31,7 @@ public class ConceptService {
     public ConceptResponse confirmConceptCoverage(UUID userId, UUID courseId, UUID conceptId) {
         ConceptResponse concept = conceptRepository.confirmCoverage(userId, courseId, conceptId)
                 .orElseThrow(ConceptNotFoundException::new);
-        TransactionUtils.afterCommit(() -> reviewScheduleRepository.createInitial(userId, conceptId));
+        TransactionUtils.afterCommit(() -> reviewScheduleService.createInitial(userId, conceptId));
         TransactionUtils.afterCommit(() -> generateQuizPoolService.generateQuizPool(userId, conceptId, QUESTIONS_PER_DIFFICULTY));
         return concept;
     }
@@ -59,7 +59,7 @@ public class ConceptService {
 
         ConceptResponse concept = conceptRepository.advanceCoverage(userId, courseId, conceptId)
                 .orElseThrow(ConceptNotFoundException::new);
-        TransactionUtils.afterCommit(() -> reviewScheduleRepository.createInitial(userId, conceptId));
+        TransactionUtils.afterCommit(() -> reviewScheduleService.createInitial(userId, conceptId));
         TransactionUtils.afterCommit(() -> generateQuizPoolService.generateQuizPool(userId, conceptId, QUESTIONS_PER_DIFFICULTY));
         return concept;
     }

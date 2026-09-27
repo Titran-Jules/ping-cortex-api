@@ -46,4 +46,8 @@ public class ReviewScheduleService {
     public List<ReviewTodayResponse> findAllDueToday(UUID userId) {
         return reviewScheduleRepository.findAllDueToday(userId);
     }
+
+    public void createInitial(UUID userId, UUID conceptId) {
+        reviewScheduleRepository.createInitial(userId, conceptId);
+    }
 }
