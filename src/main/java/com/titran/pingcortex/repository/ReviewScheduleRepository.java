@@ -1,6 +1,7 @@
 package com.titran.pingcortex.repository;
 
 import com.titran.pingcortex.dto.response.ReviewScheduleResponse;
+import com.titran.pingcortex.dto.response.ReviewTodayResponse;
 import com.titran.pingcortex.exception.DataAccessException;
 import com.titran.pingcortex.util.ManagedConnection;
 import lombok.AllArgsConstructor;
@@ -12,6 +13,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -82,5 +85,38 @@ public class ReviewScheduleRepository {
         } catch (SQLException e) {
             throw new DataAccessException("Failed to update schedule", e);
         }
+    }
+
+    public List<ReviewTodayResponse> findAllDueToday(UUID userId) {
+        String sql = """
+            SELECT cc.id AS "conceptId", cc.name AS "conceptName", co.id AS "courseId", co.title AS "courseTitle", r.next_review_at, r.interval_days
+            FROM review_schedule r
+            JOIN concept cc ON r.concept_id = cc.id
+            JOIN course co ON co.id = cc.course_id
+            WHERE r.user_id = ?
+        """;
+        List<ReviewTodayResponse> reviewTodayResponses = new ArrayList<>();
+        try (ManagedConnection connection = ManagedConnection.open(dataSource);
+            PreparedStatement stmt = connection.get().prepareStatement(sql)
+        ) {
+            stmt.setObject(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    reviewTodayResponses.add(
+                            new ReviewTodayResponse(
+                                    rs.getObject("conceptId", UUID.class),
+                                    rs.getString("conceptName"),
+                                    rs.getObject("courseId", UUID.class),
+                                    rs.getString("courseTitle"),
+                                    rs.getTimestamp("next_review_at").toInstant(),
+                                    rs.getInt("interval_days")
+                            )
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find all due schedule", e);
+        }
+        return reviewTodayResponses;
     }
 }
