@@ -5,7 +5,6 @@ import com.titran.pingcortex.dto.response.ReviewTodayResponse;
 import com.titran.pingcortex.exception.DataAccessException;
 import com.titran.pingcortex.util.ManagedConnection;
 import lombok.AllArgsConstructor;
-import org.springframework.jdbc.support.SqlArrayValue;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
@@ -89,11 +88,11 @@ public class ReviewScheduleRepository {
 
     public List<ReviewTodayResponse> findAllDueToday(UUID userId) {
         String sql = """
-            SELECT cc.id AS "conceptId", cc.name AS "conceptName", co.id AS "courseId", co.title AS "courseTitle", r.next_review_at, r.interval_days
+            SELECT cc.id AS concept_id, cc.name AS concept_name, co.id AS course_id, co.title AS course_title, r.next_review_at, r.interval_days
             FROM review_schedule r
             JOIN concept cc ON r.concept_id = cc.id
             JOIN course co ON co.id = cc.course_id
-            WHERE r.user_id = ?
+            WHERE r.user_id = ? AND r.next_review_at <= CURRENT_TIMESTAMP
         """;
         List<ReviewTodayResponse> reviewTodayResponses = new ArrayList<>();
         try (ManagedConnection connection = ManagedConnection.open(dataSource);
@@ -104,10 +103,10 @@ public class ReviewScheduleRepository {
                 while (rs.next()) {
                     reviewTodayResponses.add(
                             new ReviewTodayResponse(
-                                    rs.getObject("conceptId", UUID.class),
-                                    rs.getString("conceptName"),
-                                    rs.getObject("courseId", UUID.class),
-                                    rs.getString("courseTitle"),
+                                    rs.getObject("concept_id", UUID.class),
+                                    rs.getString("concept_name"),
+                                    rs.getObject("course_id", UUID.class),
+                                    rs.getString("course_title"),
                                     rs.getTimestamp("next_review_at").toInstant(),
                                     rs.getInt("interval_days")
                             )
