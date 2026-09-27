@@ -1,10 +1,12 @@
 package com.titran.pingcortex.service;
 
 import com.titran.pingcortex.dto.response.ReviewScheduleResponse;
+import com.titran.pingcortex.dto.response.ReviewTodayResponse;
 import com.titran.pingcortex.repository.ReviewScheduleRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,5 +41,9 @@ public class ReviewScheduleService {
         double newEasinessFactor = Math.max(1.3,
                 current.easinessFactor() + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)));
         reviewScheduleRepository.updateSchedule(userId, conceptId, newIntervalDays, newEasinessFactor, newRepetitionCount);
+    }
+
+    public List<ReviewTodayResponse> findAllDueToday(UUID userId) {
+        return reviewScheduleRepository.findAllDueToday(userId);
     }
 }

@@ -55,8 +55,7 @@ public class FeynmanService {
         int quality = clamp((int) Math.round(result.score() / 100.0 * 5), 0, 5);
         reviewScheduleService.applyReviewIfDue(userId, conceptId, quality);
 
-        FeynmanSubmissionResponse submit = feynmanRepository.create(userId, conceptId, explanationText, result, result.score());
-        return submit;
+        return feynmanRepository.create(userId, conceptId, explanationText, result, result.score());
     }
 
     private int calculateNewMastery(UUID userId, UUID conceptId, double score) {
