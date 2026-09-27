@@ -5,6 +5,7 @@ import com.titran.pingcortex.dto.response.ConceptResponse;
 import com.titran.pingcortex.exception.ConceptNotFoundException;
 import com.titran.pingcortex.exception.MasteryThresholdException;
 import com.titran.pingcortex.repository.ConceptRepository;
+import com.titran.pingcortex.repository.ReviewScheduleRepository;
 import com.titran.pingcortex.util.TransactionUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.UUID;
 public class ConceptService {
     private final ConceptRepository conceptRepository;
     private final GenerateQuizPoolService generateQuizPoolService;
+    private final ReviewScheduleService reviewScheduleService;
 
     private static final int QUESTIONS_PER_DIFFICULTY = 6;
 
@@ -29,6 +31,7 @@ public class ConceptService {
     public ConceptResponse confirmConceptCoverage(UUID userId, UUID courseId, UUID conceptId) {
         ConceptResponse concept = conceptRepository.confirmCoverage(userId, courseId, conceptId)
                 .orElseThrow(ConceptNotFoundException::new);
+        TransactionUtils.afterCommit(() -> reviewScheduleService.createInitial(userId, conceptId));
         TransactionUtils.afterCommit(() -> generateQuizPoolService.generateQuizPool(userId, conceptId, QUESTIONS_PER_DIFFICULTY));
         return concept;
     }
@@ -56,6 +59,7 @@ public class ConceptService {
 
         ConceptResponse concept = conceptRepository.advanceCoverage(userId, courseId, conceptId)
                 .orElseThrow(ConceptNotFoundException::new);
+        TransactionUtils.afterCommit(() -> reviewScheduleService.createInitial(userId, conceptId));
         TransactionUtils.afterCommit(() -> generateQuizPoolService.generateQuizPool(userId, conceptId, QUESTIONS_PER_DIFFICULTY));
         return concept;
     }

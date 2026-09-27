@@ -14,7 +14,6 @@ import com.titran.pingcortex.repository.*;
 import com.titran.pingcortex.security.EncryptionService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -22,14 +21,11 @@ import java.util.UUID;
 @AllArgsConstructor
 public class FeynmanService {
     private final UserRepository userRepository;
-    private final FeynmanRepository feynmanRepository;
     private final ConceptRepository conceptRepository;
     private final AiClientResolver aiClientResolver;
     private final EncryptionService encryptionService;
-    private final QuizRepository quizRepository;
-    private final MasteryRepository masteryRepository;
+    private final FeynmanPersistenceService feynmanPersistenceService;
 
-    @Transactional
     public FeynmanSubmissionResponse feynmanSubmission(UUID userId, UUID conceptId, String explanationText) {
         if (!conceptRepository.belongsToUser(userId, conceptId)) {
             throw new ConceptNotFoundException();
@@ -47,21 +43,6 @@ public class FeynmanService {
 
         AiResults.FeynmanEvaluationResult result = aiClient.evaluateFeynman(decryptedKey, concept.name(), concept.description(), explanationText);
 
-        int newMastery = calculateNewMastery(userId, conceptId, result.score());
-
-        FeynmanSubmissionResponse submit = feynmanRepository.create(userId, conceptId, explanationText, result, result.score());
-        masteryRepository.updateMasteryLevel(userId, conceptId, newMastery);
-        return submit;
-    }
-
-    private int calculateNewMastery(UUID userId, UUID conceptId, double score) {
-        int currentMastery = quizRepository.findOrCreateMasteryLevel(userId, conceptId);
-        double actual = score / 100.0;
-        double expected = 1.0 / (1.0 + Math.pow(10.0, (60 - currentMastery) / 400.0));
-        return clamp((int) Math.round(currentMastery + 10 * (actual - expected)), 0, 100);
-    }
-
-    private int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
+        return feynmanPersistenceService.persistSubmission(userId, conceptId, explanationText, result);
     }
 }
