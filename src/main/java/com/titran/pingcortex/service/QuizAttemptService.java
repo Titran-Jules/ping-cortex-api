@@ -23,6 +23,7 @@ public class QuizAttemptService {
     private final QuizRepository quizRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final MasteryRepository masteryRepository;
+    private final ReviewScheduleService reviewScheduleService;
 
     private static final double K = 6.0;
 
@@ -52,6 +53,9 @@ public class QuizAttemptService {
         int newMastery = clamp((int) Math.round(currentMastery + K * (actual - expected)), 0, 100);
 
         masteryRepository.updateMasteryLevel(userId, question.conceptId(), newMastery);
+
+        int quality = isCorrect ? 5 : 2;
+        reviewScheduleService.applyReviewIfDue(userId, question.conceptId(), quality);
 
         UUID correctOptionId = question.options().stream()
                 .filter(QuizOptionAfterAttempt::isCorrect)

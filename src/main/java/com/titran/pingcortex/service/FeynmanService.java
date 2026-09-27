@@ -28,6 +28,7 @@ public class FeynmanService {
     private final EncryptionService encryptionService;
     private final QuizRepository quizRepository;
     private final MasteryRepository masteryRepository;
+    private final ReviewScheduleService reviewScheduleService;
 
     @Transactional
     public FeynmanSubmissionResponse feynmanSubmission(UUID userId, UUID conceptId, String explanationText) {
@@ -49,8 +50,12 @@ public class FeynmanService {
 
         int newMastery = calculateNewMastery(userId, conceptId, result.score());
 
-        FeynmanSubmissionResponse submit = feynmanRepository.create(userId, conceptId, explanationText, result, result.score());
         masteryRepository.updateMasteryLevel(userId, conceptId, newMastery);
+
+        int quality = clamp((int) Math.round(result.score() / 100.0 * 5), 0, 5);
+        reviewScheduleService.applyReviewIfDue(userId, conceptId, quality);
+
+        FeynmanSubmissionResponse submit = feynmanRepository.create(userId, conceptId, explanationText, result, result.score());
         return submit;
     }
 
